@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Admin — Leads</title>
+    <link rel="stylesheet" href="../styles.css">
+    <style>
+      .admin-wrap{min-height:100vh;display:flex;align-items:flex-start;padding-top:40px}
+      .toolbar{display:flex;gap:8px;align-items:center;margin-bottom:12px}
+      table{width:100%;border-collapse:collapse}
+      th,td{border:1px solid #e5e7eb;padding:8px 10px;text-align:left}
+      th{background:#f8fafc}
+      .muted{color:#555}
+      .hidden{display:none}
+    </style>
+  </head>
+  <body>
+    <main class="section admin-wrap">
+      <div class="container" style="width:min(1100px,100% - 24px)">
+        <div class="nav-row">
+          <a class="btn" href="../index.html">← Back to site</a>
+          <span></span>
+        </div>
+        <h1 style="font-size:clamp(1.4rem,4vw,2rem);margin-bottom:10px">Leads Dashboard</h1>
+
+        <div id="auth" class="toolbar">
+          <button id="loginBtn" class="btn btn-accent">Log in</button>
+          <button id="logoutBtn" class="btn hidden">Log out</button>
+          <span id="who" class="muted"></span>
+        </div>
+
+        <div id="controls" class="toolbar hidden">
+          <button id="refreshBtn" class="btn btn-accent">Refresh</button>
+          <button id="exportBtn" class="btn">Export CSV</button>
+          <span id="count" class="muted"></span>
+        </div>
+
+        <div id="error" class="muted hidden"></div>
+        <div class="table-wrap">
+          <table id="leadsTable" class="hidden">
+            <thead>
+              <tr>
+                <th>Created</th>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Want</th>
+                <th>Role</th>
+                <th>Problem</th>
+                <th>Price</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </main>
+
+    <script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
+    <script src="./admin.js" defer></script>
+  </body>
+</html>
