@@ -1,3 +1,3 @@
-[build]
-  publish = "."
+﻿[build]
+  publish = "acdoesit"
   functions = "netlify/functions"
