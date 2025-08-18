@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>How much do you charge?</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+      .slider-wrap{display:grid;gap:12px;margin:18px 0}
+      .slider{width:100%}
+      .price-label{font-size:1.2rem;font-weight:800}
+      .muted{color:var(--muted)}
+      .inline{display:flex;align-items:center;gap:10px}
+      .checkbox{width:18px;height:18px}
+    </style>
+  </head>
+  <body>
+    <main class="section step" style="min-height:100vh;display:flex;align-items:center;">
+      <div class="container" style="width:min(800px,100% - 24px);">
+        <div class="nav-row">
+          <a id="back" class="btn" href="problem.html">← Back</a>
+          <a id="next" class="btn btn-accent" href="contact.html">Next →</a>
+        </div>
+        <h1 style="font-size:clamp(1.6rem,6vw,2.4rem);margin-bottom:18px">How much do you charge?</h1>
+        <div class="slider-wrap">
+          <div class="inline"><div id="priceOut" class="price-label">$0</div><div class="muted">per sale or project</div></div>
+          <input id="priceRange" class="slider" type="range" min="0" max="6000" step="50" value="0" aria-label="Price">
+          <div class="inline">
+            <input id="varies" type="checkbox" class="checkbox" aria-label="It varies">
+            <label for="varies">It varies</label>
+          </div>
+        </div>
+        <a id="continue" class="btn btn-accent btn-lg" href="contact.html">Continue</a>
+      </div>
+    </main>
+    <script>
+      const range = document.getElementById('priceRange');
+      const out = document.getElementById('priceOut');
+      const varies = document.getElementById('varies');
+      const format = (v)=> v >= 6000 ? '$6,000+' : `$${Number(v).toLocaleString()}`;
+      const update = ()=> { out.textContent = varies.checked ? 'It varies' : format(range.value); };
+      range.addEventListener('input', update);
+      varies.addEventListener('change', update);
+      update();
+
+      // carry forward all params and add selected price
+      const params = new URLSearchParams(window.location.search);
+      const continueBtn = document.getElementById('continue');
+      const buildNextHref = () => {
+        const next = new URL((continueBtn?.getAttribute('href') || document.getElementById('next').getAttribute('href')), window.location.origin);
+        const q = new URLSearchParams(next.search);
+        for (const [k,v] of params.entries()) { q.set(k,v); }
+        const price = document.getElementById('varies').checked ? 'It varies' : format(document.getElementById('priceRange').value);
+        q.set('price', price);
+        next.search = '?' + q.toString();
+        if (continueBtn) continueBtn.setAttribute('href', next.pathname + next.search);
+        const nextNav = document.getElementById('next');
+        if (nextNav) nextNav.setAttribute('href', next.pathname + next.search);
+      };
+      range.addEventListener('input', buildNextHref);
+      varies.addEventListener('change', buildNextHref);
+      buildNextHref();
+
+      // Set back link with params
+      const back = document.getElementById('back');
+      if (back) {
+        const b = new URL(back.getAttribute('href'), window.location.origin);
+        b.search = '?' + params.toString();
+        back.setAttribute('href', b.pathname + b.search);
+      }
+    </script>
+  </body>
+  </html>
+
+

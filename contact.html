@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Get your free plan</title>
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <main class="section step" style="min-height:100vh;display:flex;align-items:center;">
+      <div class="container" style="width:min(800px,100% - 24px);">
+        <h1 style="font-size:clamp(1.6rem,6vw,2.4rem);margin-bottom:18px">Where should we send your plan?</h1>
+        <form id="lead-form" class="form" autocomplete="on" style="margin-top:8px">
+          <label class="field">
+            <span>Full name</span>
+            <input type="text" id="fullName" required placeholder="Jane Doe">
+          </label>
+          <label class="field">
+            <span>Email</span>
+            <input type="email" id="email" required placeholder="you@company.com">
+          </label>
+          <button type="submit" class="btn btn-accent btn-lg" style="margin-top:12px">Get My Free Customer Acquisition Plan</button>
+          <p class="form-note">No spam. You'll hear from us within one business day.</p>
+        </form>
+      </div>
+    </main>
+    <script>
+      document.getElementById('lead-form').addEventListener('submit', (e) => {
+        e.preventDefault();
+        const name = document.getElementById('fullName').value.trim();
+        const email = document.getElementById('email').value.trim();
+        const params = new URLSearchParams(window.location.search);
+        const want = params.get('want') || '';
+        const role = params.get('role') || '';
+        const problem = params.get('problem') || '';
+        const price = params.get('price') || '';
+        const to = 'hello@acdoesit.com';
+        const subject = encodeURIComponent('Free Plan Request');
+        const bodyLines = [
+          `Name: ${name}`,
+          `Email: ${email}`,
+          '',
+          `What they want: ${want}`,
+          `Role: ${role}`,
+          `Biggest problem: ${problem}`,
+          `Price point: ${price}`
+        ];
+        const body = encodeURIComponent(bodyLines.join('\n'));
+        const mailto = `mailto:${to}?subject=${subject}&body=${body}`;
+        window.location.href = mailto;
+      });
+      // Preserve params if user refreshes or uses back/forward
+      (function preserveParams(){
+        const links = document.querySelectorAll('a[href]');
+        const params = window.location.search;
+        links.forEach(a => {
+          const url = new URL(a.href, window.location.origin);
+          url.search = params;
+          a.href = url.pathname + url.search;
+        });
+      })();
+    </script>
+  </body>
+  </html>
+
+

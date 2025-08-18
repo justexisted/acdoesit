@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Biggest Problem</title>
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <main class="section step" style="min-height:100vh;display:flex;align-items:center;">
+      <div class="container" style="width:min(800px,100% - 24px);">
+        <h1 style="font-size:clamp(1.6rem,6vw,2.4rem);margin-bottom:18px">What is your biggest problem right now?</h1>
+        <div class="options" style="display:grid;gap:12px;">
+          <a class="btn btn-accent btn-lg" href="price.html?problem=Getting%20the%20right%20people%20to%20visit">Getting the right people to visit</a>
+          <a class="btn btn-accent btn-lg" href="price.html?problem=Make%20people%20want%20to%20buy">Make people want to buy</a>
+          <a class="btn btn-accent btn-lg" href="price.html?problem=Turning%20visitors%20into%20customers">Turning visitors into customers</a>
+          <a class="btn btn-accent btn-lg" href="price.html?problem=I%20don%27t%20know">I don't know</a>
+        </div>
+      </div>
+    </main>
+    <script>
+      // Carry forward want and role
+      const params = new URLSearchParams(window.location.search);
+      const want = params.get('want');
+      const role = params.get('role');
+      document.querySelectorAll('.options a').forEach(a => {
+        const url = new URL(a.getAttribute('href'), window.location.origin);
+        const next = new URLSearchParams(url.search);
+        if (want) next.set('want', want);
+        if (role) next.set('role', role);
+        url.search = '?' + next.toString();
+        a.setAttribute('href', url.pathname + url.search);
+      });
+    </script>
+  </body>
+  </html>
+
+

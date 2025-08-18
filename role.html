@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Your Role</title>
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <main class="section step" style="min-height:100vh;display:flex;align-items:center;">
+      <div class="container" style="width:min(800px,100% - 24px);">
+        <h1 style="font-size:clamp(1.6rem,6vw,2.4rem);margin-bottom:18px">What is your role?</h1>
+        <div class="options" style="display:grid;gap:12px;">
+          <a class="btn btn-accent btn-lg" href="problem.html?role=I%20work%20for%20myself">I work for myself</a>
+          <a class="btn btn-accent btn-lg" href="problem.html?role=I%20have%20a%20team">I have a team</a>
+          <a class="btn btn-accent btn-lg" href="problem.html?role=I%20work%20for%20a%20company">I work for a company</a>
+          <a class="btn btn-accent btn-lg" href="problem.html?role=Other">Other</a>
+        </div>
+      </div>
+    </main>
+    <script>
+      // Preserve prior selections (want) when navigating
+      const params = new URLSearchParams(window.location.search);
+      const want = params.get('want');
+      if (want) {
+        document.querySelectorAll('.options a').forEach(a => {
+          const url = new URL(a.getAttribute('href'), window.location.origin);
+          const next = new URLSearchParams(url.search);
+          // carry forward
+          next.set('want', want);
+          url.search = '?' + next.toString();
+          a.setAttribute('href', url.pathname + url.search);
+        });
+      }
+    </script>
+  </body>
+  </html>
+
+
