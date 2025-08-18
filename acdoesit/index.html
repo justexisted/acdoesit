@@ -9,6 +9,12 @@
     <link rel="preload" href="styles.css" as="style">
     <link rel="stylesheet" href="styles.css">
   </head>
+  <script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
+  <script>
+    if (location.hash.includes('invite_token')) {
+      location.replace('/admin/' + location.hash);
+    }
+  </script>
   <body>
     <a class="skip-link" href="start.html">Skip to free plan</a>
 
