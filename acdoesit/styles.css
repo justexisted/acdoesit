@@ -11,6 +11,18 @@
   --ring: rgba(6, 69, 145, .35);
 }
 
+.brand { 
+  margin-bottom: 16px; 
+}
+
+.logo { 
+  height: 32px; width: auto; display: block; 
+}
+
+@media (min-width: 780px) {
+  .logo { height: 36px; }
+}
+
 * {
   box-sizing: border-box;
 }
