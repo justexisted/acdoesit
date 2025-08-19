@@ -7,18 +7,21 @@
     <link rel="stylesheet" href="styles.css">
   </head>
   <body>
+    <header class="page-header">
+      <div class="header-content">
+        <div class="header-logo">
+          <img src="assets/newlogo.png" alt="AC Does It">
+          <span class="brand-text">AC Does It</span>
+        </div>
+        <div class="nav-row">
+          <a id="back" class="btn" href="price.html">← Back</a>
+          <span></span>
+        </div>
+      </div>
+    </header>
+    
     <main class="section step" style="min-height:100vh;display:flex;align-items:center;">
       <div class="container" style="width:min(800px,100% - 24px);">
-        <div class="nav-row">
-          <div class="nav-logo">
-            <img src="assets/newlogo.png" alt="AC Does It">
-            <span class="brand-text">AC Does It</span>
-          </div>
-          <div style="display: flex; gap: 12px;">
-            <a id="back" class="btn" href="price.html">← Back</a>
-            <span></span>
-          </div>
-        </div>
         <h1 style="font-size:clamp(1.6rem,6vw,2.4rem);margin-bottom:18px">Where should we send your plan?</h1>
         <form id="lead-form" class="form" autocomplete="on" style="margin-top:8px">
           <label class="field">
