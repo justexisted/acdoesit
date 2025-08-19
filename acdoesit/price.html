@@ -11,14 +11,16 @@
       .price-label{font-size:1.2rem;font-weight:800}
       .muted{color:var(--muted)}
       .inline{display:flex;align-items:center;gap:10px}
-      .checkbox{width:18px;height:18px}
+      .checkbox{appearance:none;width:20px;height:20px;border:1px solid #d1d5db;border-radius:4px;display:inline-grid;place-items:center;background:#fff}
+      .checkbox:checked{background:#064591;border-color:#064591}
+      .checkbox:checked::after{content:"✓";color:#fff;font-size:14px;line-height:1}
     </style>
   </head>
   <body>
     <main class="section step" style="min-height:100vh;display:flex;align-items:center;">
       <div class="container" style="width:min(800px,100% - 24px);">
         <div class="nav-row">
-          <a id="back" class="btn" href="problem.html">← Back</a>
+          <a id="back" class="btn" href="role.html">← Back</a>
           <a id="next" class="btn btn-accent" href="contact.html">Next →</a>
         </div>
         <h1 style="font-size:clamp(1.6rem,6vw,2.4rem);margin-bottom:18px">How much do you charge?</h1>

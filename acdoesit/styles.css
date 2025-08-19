@@ -23,8 +23,8 @@
   .logo { height: 36px; }
 }
 
-.mainLogo { height: 36px; width: auto; display: block; }
-@media (min-width: 780px) { .mainLogo { height: 40px; } }
+.mainLogo { height: 100px; width: auto; display: block; }
+@media (min-width: 780px) { .mainLogo { height: 100px; } }
 
 .q-block { margin-top: 18px; }
 .q-title { font-weight: 800; margin: 0 0 10px 0; }
@@ -295,6 +295,11 @@ input:focus, textarea:focus { outline: none; box-shadow: 0 0 0 6px var(--ring); 
   justify-content: space-between;
   align-items: center;
   margin-bottom: 16px;
+  position: sticky;
+  top: 0;
+  background: var(--bg);
+  padding: 8px 0;
+  z-index: 2;
 }
 .nav-row .btn { min-width: 120px; }
 .nav-row .btn:not(.btn-accent) {
