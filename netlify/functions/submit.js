@@ -7,7 +7,7 @@ export async function handler(event) {
     return { statusCode: 405, body: 'Method Not Allowed' };
   }
   try {
-    const { name, email, want, role, problem, price } = JSON.parse(event.body || '{}');
+    const { name, email, role, price } = JSON.parse(event.body || '{}');
     if (!name || !email) {
       return { statusCode: 400, body: 'Missing name or email' };
     }
@@ -17,7 +17,7 @@ export async function handler(event) {
     if (!url || !key) {
       return { statusCode: 500, body: 'Server not configured' };
     }
-    const payload = { name, email, want, role, problem, price };
+    const payload = { name, email, role, price };
     const resp = await fetch(`${url}/rest/v1/${table}`, {
       method: 'POST',
       headers: {

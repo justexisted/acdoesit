@@ -19,7 +19,7 @@ document.addEventListener('DOMContentLoaded', () => {
       tbody.innerHTML = '';
       leads.forEach(l => {
         const tr = document.createElement('tr');
-        const cells = [l.created_at?.slice(0,19)?.replace('T',' ')||'', l.name||'', l.email||'', l.want||'', l.role||'', l.problem||'', l.price||''];
+        const cells = [l.created_at?.slice(0,19)?.replace('T',' ')||'', l.name||'', l.email||'', l.role||'', l.price||''];
         cells.forEach(c => { const td = document.createElement('td'); td.textContent = c; tr.appendChild(td); });
         tbody.appendChild(tr);
       });
@@ -45,7 +45,7 @@ document.addEventListener('DOMContentLoaded', () => {
   
     function toCSV(rows) {
       const esc = (v) => '"' + String(v ?? '').replace(/"/g,'""') + '"';
-      const headers = ['created_at','name','email','want','role','problem','price'];
+      const headers = ['created_at','name','email','role','price'];
       const lines = [headers.join(',')];
       rows.forEach(r => lines.push(headers.map(h => esc(r[h])).join(',')));
       return lines.join('\n');
