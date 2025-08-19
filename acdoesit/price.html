@@ -45,13 +45,14 @@
       varies.addEventListener('change', update);
       update();
 
-      // carry forward all params and add selected price
+      // Build next href with role and price
       const params = new URLSearchParams(window.location.search);
       const continueBtn = document.getElementById('continue');
       const buildNextHref = () => {
         const next = new URL((continueBtn?.getAttribute('href') || document.getElementById('next').getAttribute('href')), window.location.origin);
-        const q = new URLSearchParams(next.search);
-        for (const [k,v] of params.entries()) { q.set(k,v); }
+        const q = new URLSearchParams();
+        // Keep the role parameter
+        if (params.get('role')) q.set('role', params.get('role'));
         const price = document.getElementById('varies').checked ? 'It varies' : format(document.getElementById('priceRange').value);
         q.set('price', price);
         next.search = '?' + q.toString();
@@ -63,11 +64,11 @@
       varies.addEventListener('change', buildNextHref);
       buildNextHref();
 
-      // Set back link with params
+      // Set back link with role parameter
       const back = document.getElementById('back');
       if (back) {
         const b = new URL(back.getAttribute('href'), window.location.origin);
-        b.search = '?' + params.toString();
+        if (params.get('role')) b.search = '?role=' + params.get('role');
         back.setAttribute('href', b.pathname + b.search);
       }
     </script>

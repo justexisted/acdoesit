@@ -38,9 +38,7 @@
         const payload = {
           name,
           email,
-          want: params.get('want') || '',
           role: params.get('role') || '',
-          problem: params.get('problem') || '',
           price: params.get('price') || ''
         };
         const errEl = document.getElementById('submit-error');
@@ -60,7 +58,14 @@
         }
       });
       
-      // keep the existing back-link param preservation if present
+      // Set back link with role parameter
+      const back = document.getElementById('back');
+      if (back) {
+        const params = new URLSearchParams(window.location.search);
+        const b = new URL(back.getAttribute('href'), window.location.origin);
+        if (params.get('role')) b.search = '?role=' + params.get('role');
+        back.setAttribute('href', b.pathname + b.search);
+      }
       </script>
   </body>
   </html>

@@ -295,11 +295,16 @@ input:focus, textarea:focus { outline: none; box-shadow: 0 0 0 6px var(--ring); 
   justify-content: space-between;
   align-items: center;
   margin-bottom: 16px;
-  position: sticky;
-  top: 0;
+  position: fixed;
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%);
   background: var(--bg);
-  padding: 8px 0;
-  z-index: 2;
+  padding: 8px 16px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  z-index: 1000;
+  width: min(800px, calc(100% - 32px));
 }
 .nav-row .btn { min-width: 120px; }
 .nav-row .btn:not(.btn-accent) {
