@@ -294,17 +294,13 @@ input:focus, textarea:focus { outline: none; box-shadow: 0 0 0 6px var(--ring); 
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 16px;
-  position: fixed;
-  top: 16px;
-  left: 50%;
-  transform: translateX(-50%);
-  background: var(--bg);
-  padding: 8px 16px;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-  z-index: 1000;
-  width: min(800px, calc(100% - 32px));
+  margin-bottom: 32px;
+  padding: 16px 20px;
+  background: var(--surface);
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  width: 100%;
+  box-sizing: border-box;
 }
 .nav-row .btn { min-width: 120px; }
 .nav-row .btn:not(.btn-accent) {
@@ -314,6 +310,23 @@ input:focus, textarea:focus { outline: none; box-shadow: 0 0 0 6px var(--ring); 
 }
 .nav-row .btn:not(.btn-accent):hover { background: rgba(142, 202, 255, 0.14); }
 .nav-row .btn:not(.btn-accent):active { transform: translateY(1px); }
+
+.nav-logo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.nav-logo img {
+  height: 32px;
+  width: auto;
+}
+
+.nav-logo .brand-text {
+  font-weight: 700;
+  font-size: 1.1rem;
+  color: var(--accent);
+}
 
 
 
