@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>AI Prompt Builder  San Diego Real Estate</title>
+    <link rel="stylesheet" href="../styles.css">
+    <style>
+      .prompt-builder-wrap{min-height:100vh;display:flex;align-items:flex-start;padding-top:40px}
+      .module-picker{display:grid;gap:12px;margin-bottom:24px}
+      @media (min-width:780px){.module-picker{grid-template-columns:repeat(5,1fr)}}
+      .module-btn{background:var(--surface-2);border:2px solid var(--ring);border-radius:8px;padding:16px;text-align:center;cursor:pointer;transition:all 0.2s}
+      .module-btn:hover{border-color:var(--accent);background:var(--accent);color:var(--accent-ink)}
+      .module-btn.active{border-color:var(--accent);background:var(--accent);color:var(--accent-ink)}
+      .module-form{display:grid;gap:16px;margin-bottom:24px}
+      @media (min-width:780px){.module-form{grid-template-columns:repeat(2,1fr)}}
+      @media (min-width:1200px){.module-form{grid-template-columns:repeat(3,1fr)}}
+      .field{display:flex;flex-direction:column;gap:6px}
+      .field span{font-weight:600;font-size:0.9rem}
+      .field input,.field select,.field textarea{padding:8px 12px;border:1px solid #e5e7eb;border-radius:6px;font-size:0.9rem}
+      .field textarea{min-height:80px;resize:vertical}
+      .field select[multiple]{min-height:100px}
+      .field.checkboxes,.field.multiselect{grid-column:1/-1}
+      .field.checkboxes legend,.field.multiselect span{font-weight:600;font-size:0.9rem;margin-bottom:8px}
+      .field.checkboxes label{display:flex;align-items:center;gap:8px;margin-bottom:6px;font-size:0.9rem}
+      .field.checkboxes input[type="checkbox"]{width:auto;margin:0}
+      .actions{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:24px}
+      .preview{background:#f8fafc;border:1px solid #e5e7eb;border-radius:8px;padding:16px;white-space:pre-wrap;font-family:monospace;font-size:0.9rem;line-height:1.5;max-height:400px;overflow-y:auto}
+      .error{color:var(--bad);font-size:0.8rem;margin-top:4px}
+      .required::after{content:" *";color:var(--bad)}
+      .suffix{position:relative}
+      .suffix input{padding-right:40px}
+      .suffix::after{content:attr(data-suffix);position:absolute;right:12px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:0.8rem}
+    </style>
+  </head>
+  <body>
+    <main class="section prompt-builder-wrap">
+      <div class="container" style="width:min(1200px,100% - 24px)">
+        <div class="nav-row">
+          <a class="btn" href="../index.html"> Back to site</a>
+          <span></span>
+        </div>
+        <h1 style="font-size:clamp(1.4rem,4vw,2rem);margin-bottom:10px">AI Prompt Builder</h1>
+        <p class="subhead">Generate professional AI prompts for San Diego real estate</p>
+
+        <!-- Module Picker -->
+        <div id="module-picker" class="module-picker">
+          <button class="module-btn active" data-module="listing">
+            <strong>Property Listing</strong>
+            <div style="font-size:0.8rem;margin-top:4px">Generate SEO-friendly MLS descriptions</div>
+          </button>
+          <button class="module-btn" data-module="investment">
+            <strong>Investment Analysis</strong>
+            <div style="font-size:0.8rem;margin-top:4px">Quick financial viability check</div>
+          </button>
+          <button class="module-btn" data-module="zoning">
+            <strong>Zoning & Feasibility</strong>
+            <div style="font-size:0.8rem;margin-top:4px">SD Municipal Code analysis</div>
+          </button>
+          <button class="module-btn" data-module="staging">
+            <strong>Staging Plan</strong>
+            <div style="font-size:0.8rem;margin-top:4px">Room-by-room staging strategy</div>
+          </button>
+          <button class="module-btn" data-module="calendar">
+            <strong>Content Calendar</strong>
+            <div style="font-size:0.8rem;margin-top:4px">Monthly social media posts</div>
+          </button>
+        </div>
+
+        <!-- Dynamic Form -->
+        <form id="module-form" class="module-form"></form>
+
+        <!-- Actions -->
+        <div class="actions">
+          <button id="generate-btn" class="btn btn-accent">Generate Prompt</button>
+          <button id="copy-btn" class="btn">Copy to Clipboard</button>
+          <button id="save-btn" class="btn">Save to Account</button>
+        </div>
+
+        <!-- Preview -->
+        <div id="preview-container" style="display:none">
+          <h3>Generated Prompt:</h3>
+          <pre id="preview" class="preview"></pre>
+        </div>
+      </div>
+    </main>
+
+    <script src="./ai-prompt-builder.js" defer></script>
+  </body>
+</html>
