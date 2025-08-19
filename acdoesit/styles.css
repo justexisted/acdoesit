@@ -23,6 +23,14 @@
   .logo { height: 36px; }
 }
 
+.mainLogo { height: 36px; width: auto; display: block; }
+@media (min-width: 780px) { .mainLogo { height: 40px; } }
+
+.q-block { margin-top: 18px; }
+.q-title { font-weight: 800; margin: 0 0 10px 0; }
+.q-options { display: grid; gap: 10px; }
+@media (min-width: 780px) { .q-options { grid-template-columns: repeat(2, 1fr); } }
+
 * {
   box-sizing: border-box;
 }
