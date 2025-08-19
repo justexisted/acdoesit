@@ -1,3 +1,8 @@
-[build]
+﻿[build]
   publish = "acdoesit"
   functions = "netlify/functions"
+
+[[redirects]]
+  from = "/problem.html"
+  to = "/price.html"
+  status = 301
