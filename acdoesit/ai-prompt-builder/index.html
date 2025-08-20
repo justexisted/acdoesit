@@ -37,6 +37,15 @@
       .combobox-container{position:relative}
       .combobox-container input{width:100%;padding:8px 12px;border:1px solid #e5e7eb;border-radius:6px;font-size:0.9rem}
       .combobox-container input:focus{outline:none;border-color:#064591;box-shadow:0 0 0 3px rgba(6, 69, 145, 0.1)}
+      
+      /* Template selector styling */
+      .template-selector{margin-top:20px;padding:16px;background:#f8fafc;border:1px solid #e5e7eb;border-radius:8px}
+      .template-selector h3{margin:0 0 12px 0;font-size:1.1rem;color:var(--accent)}
+      .template-buttons{display:flex;gap:8px;flex-wrap:wrap}
+      .template-btn{padding:8px 16px;border:1px solid #d1d5db;border-radius:6px;background:#fff;cursor:pointer;transition:all 0.2s ease;font-size:0.9rem}
+      .template-btn:hover{border-color:#064591;background:#f0f4ff}
+      .template-btn.active{border-color:#064591;background:#064591;color:#fff}
+      
       .actions{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:24px}
       .preview{background:#f8fafc;border:1px solid #e5e7eb;border-radius:8px;padding:16px;white-space:pre-wrap;font-family:monospace;font-size:0.9rem;line-height:1.5;max-height:400px;overflow-y:auto}
       .error{color:var(--bad);font-size:0.8rem;margin-top:4px}
@@ -91,6 +100,16 @@
 
         <!-- Dynamic Form -->
         <form id="module-form" class="module-form"></form>
+
+        <!-- Template Selection (for Property Listing) -->
+        <div id="template-selector" class="template-selector" style="display:none;margin-top:16px;">
+          <h3 style="margin-bottom:12px">Choose Template Style:</h3>
+          <div class="template-buttons">
+            <button class="template-btn active" data-template="full">Full Description</button>
+            <button class="template-btn" data-template="zillow">Zillow (Concise)</button>
+            <button class="template-btn" data-template="instagram">Instagram (Social)</button>
+          </div>
+        </div>
 
         <!-- Actions -->
         <div class="actions">

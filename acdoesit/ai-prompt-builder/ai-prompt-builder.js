@@ -15,7 +15,11 @@ document.addEventListener("DOMContentLoaded", () => {
         { key: "Target_Audience", type: "combobox", label: "Target Audience", required: true, options: ["First-time homebuyers", "Young professionals", "Growing families", "Retirees", "Investors"], placeholder: "Type or select target audience" },
         { key: "Tone", type: "select", label: "Tone", required: true, options: ["Luxurious & Elegant", "Modern & Trendy", "Cozy & Charming", "Professional & Direct"] }
       ],
-      template: "Act as an expert San Diego real estate copywriter. Write a compelling property listing description for a [Property_Type] located in the [Neighborhood] neighborhood of San Diego. The property has a [Architectural_Style] design.\n\nProperty Details:\nAddress: [Property_Address]\nSpecs: [Beds] bedrooms, [Baths] bathrooms, [Square_Footage] sq. ft.\nKey Features:\n[Key_Features]\n\nNeighborhood Vibe: Highlight that it is [Nearby_Amenities].\n\nInstructions:\n• Craft a captivating headline.\n• Write a main body (2-3 paragraphs) that tells a story about living in the home, weaving in the key features and the benefits of the [Neighborhood] location.\n• The tone of the description must be [Tone].\n• The description should appeal directly to [Target_Audience].\n• End with a strong call to action to schedule a showing.\n• Ensure the description is optimized for SEO using keywords like \"San Diego real estate,\" \"homes for sale in [Neighborhood],\" and \"[Beds] bedroom home in San Diego.\""
+      templates: {
+        full: "Act as an expert San Diego real estate copywriter. Write a compelling property listing description for a [Property_Type] located in the [Neighborhood] neighborhood of San Diego. The property has a [Architectural_Style] design.\n\nProperty Details:\nAddress: [Property_Address]\nSpecs: [Beds] bedrooms, [Baths] bathrooms, [Square_Footage] sq. ft.\nKey Features:\n[Key_Features]\n\nNeighborhood Vibe: This home is perfectly positioned in [Neighborhood] with convenient access to [Nearby_Amenities].\n\nInstructions:\n• Craft a captivating headline.\n• Write a main body (2-3 paragraphs) that tells a story about living in the home, weaving in the key features and the benefits of the [Neighborhood] location.\n• The tone of the description must be [Tone].\n• The description should appeal directly to [Target_Audience].\n• End with a strong call to action to schedule a showing.\n• Ensure the description is optimized for SEO using keywords like \"San Diego real estate,\" \"homes for sale in [Neighborhood],\" and \"[Beds] bedroom home in San Diego.\"",
+        zillow: "Act as an expert San Diego real estate copywriter. Write a concise, compelling property listing description for Zillow (max 2000 characters) for a [Property_Type] located in the [Neighborhood] neighborhood of San Diego.\n\nProperty Details:\nAddress: [Property_Address]\nSpecs: [Beds] bedrooms, [Baths] bathrooms, [Square_Footage] sq. ft.\nKey Features:\n[Key_Features]\n\nNeighborhood: [Neighborhood] - [Nearby_Amenities]\n\nInstructions:\n• Write a compelling but concise description (under 2000 characters)\n• Focus on key selling points and neighborhood benefits\n• Include [Nearby_Amenities] as specific location advantages\n• Appeal to [Target_Audience] with [Tone] tone\n• End with a call to action\n• Use SEO keywords: \"San Diego real estate,\" \"homes for sale in [Neighborhood]\"",
+        instagram: "Act as a social media expert for San Diego real estate. Write a compelling Instagram post caption for a [Property_Type] in [Neighborhood] (max 2200 characters).\n\nProperty Highlights:\n🏠 [Beds] bed, [Baths] bath, [Square_Footage] sq ft [Property_Type]\n📍 [Neighborhood] neighborhood\n✨ [Key_Features]\n🚶‍♀️ [Nearby_Amenities]\n\nInstructions:\n• Write an engaging, Instagram-friendly caption\n• Use emojis strategically but don't overdo it\n• Highlight the lifestyle benefits of [Neighborhood]\n• Mention specific [Nearby_Amenities] as selling points\n• Appeal to [Target_Audience]\n• Include relevant hashtags: #SanDiegoRealEstate #[Neighborhood]Homes #[Beds]BedroomHome\n• End with a call to action to DM for more info"
+      }
     },
     investment: {
       fields: [
@@ -62,10 +66,12 @@ document.addEventListener("DOMContentLoaded", () => {
   };
 
   let activeModule = "listing";
+  let activeTemplate = "full"; // For listing module templates
   let formData = {}; // Store form data across module switches
   
   const picker = document.getElementById("module-picker");
   const formEl = document.getElementById("module-form");
+  const templateSelector = document.getElementById("template-selector");
   const previewEl = document.getElementById("preview");
   const previewContainer = document.getElementById("preview-container");
   const generateBtn = document.getElementById("generate-btn");
@@ -175,9 +181,15 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function generatePrompt() {
     const values = getValues();
-    console.log("Form values:", values); // Debug: see what values are captured
-    console.log("Nearby_Amenities value:", values.Nearby_Amenities); // Debug: specifically check amenities
-    const compiledPrompt = compile(Modules[activeModule].template, values);
+    
+    let template;
+    if (activeModule === "listing" && Modules[activeModule].templates) {
+      template = Modules[activeModule].templates[activeTemplate];
+    } else {
+      template = Modules[activeModule].template;
+    }
+    
+    const compiledPrompt = compile(template, values);
     previewEl.textContent = compiledPrompt;
     previewContainer.style.display = "block";
     previewContainer.scrollIntoView({ behavior: "smooth" });
@@ -223,9 +235,32 @@ document.addEventListener("DOMContentLoaded", () => {
     moduleBtn.classList.add("active");
     
     activeModule = moduleKey;
+    
+    // Show/hide template selector based on module
+    if (moduleKey === "listing") {
+      templateSelector.style.display = "block";
+    } else {
+      templateSelector.style.display = "none";
+    }
+    
     renderForm();
     previewEl.textContent = "";
     previewContainer.style.display = "none";
+  });
+  
+  // Template selection for listing module
+  templateSelector.addEventListener("click", (e) => {
+    const templateBtn = e.target.closest(".template-btn");
+    if (!templateBtn) return;
+    
+    const templateKey = templateBtn.dataset.template;
+    if (!templateKey) return;
+    
+    // Update active template and UI
+    document.querySelectorAll(".template-btn").forEach(btn => btn.classList.remove("active"));
+    templateBtn.classList.add("active");
+    
+    activeTemplate = templateKey;
   });
 
   generateBtn.addEventListener("click", generatePrompt);
@@ -234,4 +269,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Initialize the form
   renderForm();
+  
+  // Show template selector for listing module (default)
+  templateSelector.style.display = "block";
 });
