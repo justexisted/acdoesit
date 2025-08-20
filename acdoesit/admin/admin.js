@@ -175,9 +175,8 @@ document.addEventListener('DOMContentLoaded', () => {
         `${user.location.city}, ${user.location.country || user.location.region || 'Unknown'}` : 
         'Unknown';
       
-      const featureUsageText = Object.entries(user.feature_usage || {})
-        .map(([feature, count]) => `${feature}: ${count}`)
-        .join(', ') || 'None';
+      // Create feature icons instead of text
+      const featureIcons = createFeatureIcons(user.feature_usage || {});
       
       const cells = [
         formatDate(user.created_at),
@@ -188,10 +187,9 @@ document.addEventListener('DOMContentLoaded', () => {
         `<span class="${getEngagementClass(user.engagement_score)}">${getEngagementText(user.engagement_score)} (${user.engagement_score || 0})</span>`,
         user.total_actions || 0,
         formatTime(user.last_activity),
-        `<div class="feature-usage" title="${featureUsageText}">${featureUsageText}</div>`,
+        `<div class="feature-icons">${featureIcons}</div>`,
         `<div class="user-actions">
-          <button class="btn btn-primary btn-sm" onclick="viewUserDetails('${user.id}')">View</button>
-          <button class="btn btn-secondary btn-sm" onclick="exportUserData('${user.id}')">Export</button>
+          <button class="btn btn-secondary btn-sm" onclick="exportUserData('${user.id}')">📊 Export</button>
         </div>`
       ];
       
@@ -203,6 +201,33 @@ document.addEventListener('DOMContentLoaded', () => {
       
       tbody.appendChild(tr);
     });
+  }
+
+  // Create feature icons for better visualization
+  function createFeatureIcons(featureUsage) {
+    if (!featureUsage || Object.keys(featureUsage).length === 0) {
+      return '<span class="no-features">No features used</span>';
+    }
+
+    const icons = {
+      'ai_prompt_builder': '🤖',
+      'properties_saved': '🏠',
+      'page_view': '👁️',
+      'property_saved': '💾',
+      'module_switch': '🔄',
+      'prompt_generated': '✨',
+      'prompt_copied': '📋'
+    };
+
+    const featureElements = Object.entries(featureUsage).map(([feature, count]) => {
+      const icon = icons[feature] || '⚡';
+      const label = feature.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+      return `<span class="feature-icon" title="${label}: ${count}">
+        ${icon} ${count}
+      </span>`;
+    });
+
+    return featureElements.join('');
   }
 
   // Render activity table
@@ -483,8 +508,10 @@ document.addEventListener('DOMContentLoaded', () => {
         const locationText = r.location?.city ? 
           `${r.location.city}, ${r.location.country || r.location.region || 'Unknown'}` : 
           'Unknown';
+        
+        // Format feature usage for CSV
         const featureUsageText = Object.entries(r.feature_usage || {})
-          .map(([feature, count]) => `${feature}: ${count}`)
+          .map(([feature, count]) => `${feature.replace(/_/g, ' ')}: ${count}`)
           .join('; ') || 'None';
         
         const values = [
@@ -630,13 +657,6 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // Global functions for user actions
-  window.viewUserDetails = function(userId) {
-    const user = currentData.find(u => u.id === userId);
-    if (user) {
-      alert(`User Details:\nName: ${user.first_name} ${user.last_name}\nEmail: ${user.email}\nProvider: ${user.provider}\nCreated: ${formatDate(user.created_at)}\nEngagement: ${user.engagement_score || 0}`);
-    }
-  };
-
   window.exportUserData = function(userId) {
     const user = currentData.find(u => u.id === userId);
     if (user) {
@@ -650,6 +670,8 @@ document.addEventListener('DOMContentLoaded', () => {
       a.click();
       a.remove();
       URL.revokeObjectURL(url);
+      
+      setSuccess(`User data exported for ${user.first_name} ${user.last_name}`);
     }
   };
 

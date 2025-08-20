@@ -81,10 +81,28 @@ export async function handler(event, context) {
       
       // Calculate engagement metrics
       const totalActions = userActivities.length + userProperties.length;
-      const lastActivity = userActivities.length > 0 ? 
-        userActivities[0].timestamp : null;
-      const firstActivity = userActivities.length > 0 ? 
-        userActivities[userActivities.length - 1].timestamp : null;
+      
+      // Calculate last activity - prioritize most recent activity
+      let lastActivity = null;
+      let firstActivity = null;
+      
+      if (userActivities.length > 0) {
+        // Sort activities by timestamp (most recent first)
+        const sortedActivities = userActivities.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+        lastActivity = sortedActivities[0].timestamp;
+        firstActivity = sortedActivities[sortedActivities.length - 1].timestamp;
+      }
+      
+      // If no activities but has properties, use property creation time
+      if (!lastActivity && userProperties.length > 0) {
+        const sortedProperties = userProperties.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+        lastActivity = sortedProperties[0].created_at;
+      }
+      
+      // If still no last activity, use user creation time
+      if (!lastActivity) {
+        lastActivity = user.created_at;
+      }
       
       // Calculate feature usage
       const featureUsage = {};
