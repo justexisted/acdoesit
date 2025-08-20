@@ -78,6 +78,55 @@ document.addEventListener("DOMContentLoaded", () => {
   const copyBtn = document.getElementById("copy-btn");
   const saveBtn = document.getElementById("save-btn");
 
+  // User Activity Tracking Functions
+  async function trackUserActivity(action, details = {}) {
+    try {
+      // Get current user from localStorage
+      const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+      if (!currentUser || !currentUser.id) {
+        console.log('No authenticated user found for activity tracking');
+        return;
+      }
+
+      // Get user's location (simplified - in production you'd use a geolocation service)
+      const location = {
+        city: 'Unknown',
+        region: 'Unknown',
+        country: 'Unknown'
+      };
+
+      const activityData = {
+        userId: currentUser.id,
+        action: action,
+        details: {
+          ...details,
+          module: activeModule,
+          template: activeTemplate,
+          timestamp: new Date().toISOString()
+        },
+        location: location
+      };
+
+      // Send to tracking endpoint
+      const response = await fetch('/.netlify/functions/track-user-activity', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(activityData)
+      });
+
+      if (!response.ok) {
+        console.log('Failed to track activity:', response.statusText);
+      }
+    } catch (error) {
+      console.log('Error tracking user activity:', error);
+    }
+  }
+
+  // Track page load
+  trackUserActivity('page_view', { page: 'ai_prompt_builder' });
+
   // Save current form data before switching modules
   function saveCurrentFormData() {
     const { fields } = Modules[activeModule];
@@ -149,6 +198,12 @@ document.addEventListener("DOMContentLoaded", () => {
     
     // Restore data after rendering
     restoreFormData();
+    
+    // Track module switch
+    trackUserActivity('module_switch', { 
+      from_module: activeModule, 
+      to_module: activeModule 
+    });
   }
 
   function getValues() {
@@ -213,6 +268,14 @@ document.addEventListener("DOMContentLoaded", () => {
     previewEl.textContent = compiledPrompt;
     previewContainer.style.display = "block";
     previewContainer.scrollIntoView({ behavior: "smooth" });
+    
+    // Track prompt generation
+    trackUserActivity('prompt_generated', {
+      module: activeModule,
+      template: activeTemplate,
+      fields_filled: Object.keys(values).filter(key => values[key] && values[key].trim()).length,
+      total_fields: Object.keys(values).length
+    });
   }
 
   async function copyToClipboard() {
@@ -226,6 +289,13 @@ document.addEventListener("DOMContentLoaded", () => {
       await navigator.clipboard.writeText(text);
       copyBtn.textContent = "Copied!";
       setTimeout(() => copyBtn.textContent = "Copy to Clipboard", 2000);
+      
+      // Track copy action
+      trackUserActivity('prompt_copied', {
+        module: activeModule,
+        template: activeTemplate,
+        prompt_length: text.length
+      });
     } catch (err) {
       alert("Failed to copy to clipboard. Please select and copy manually.");
     }
@@ -237,6 +307,14 @@ document.addEventListener("DOMContentLoaded", () => {
       alert("No prompt to save. Please generate a prompt first.");
       return;
     }
+    
+    // Track save attempt
+    trackUserActivity('prompt_save_attempt', {
+      module: activeModule,
+      template: activeTemplate,
+      prompt_length: text.length
+    });
+    
     alert("Save functionality would integrate with your Supabase prompt_sessions table. For now, the prompt is ready to copy.");
   }
 
@@ -281,6 +359,12 @@ document.addEventListener("DOMContentLoaded", () => {
     templateBtn.classList.add("active");
     
     activeTemplate = templateKey;
+    
+    // Track template selection
+    trackUserActivity('template_selected', {
+      module: activeModule,
+      template: templateKey
+    });
   });
 
   generateBtn.addEventListener("click", generatePrompt);
