@@ -11,13 +11,6 @@
   --ring: rgba(6, 69, 145, .35);
 }
 
-.brand { 
-  margin-bottom: 16px; 
-}
-
-.logo { 
-  height: 32px; width: auto; display: block; 
-}
 
 @media (min-width: 780px) {
   .logo { height: 36px; }
@@ -368,5 +361,16 @@ input:focus, textarea:focus { outline: none; box-shadow: 0 0 0 6px var(--ring); 
   color: var(--accent);
 }
 
+.logo { 
+  height: 32px; width: auto; display: block; 
+}
 
+.brand { 
+  margin-bottom: 16px; 
+  position: fixed;
+  top: 0;
+}
 
+.ai-prompt-btn {
+  background: #c5e1f9;
+}
