@@ -155,32 +155,51 @@ document.addEventListener("DOMContentLoaded", () => {
     const { fields } = Modules[activeModule];
     const values = {};
     
+    console.log("DEBUG - getValues called for module:", activeModule);
+    console.log("DEBUG - Fields:", fields);
+    
     fields.forEach(field => {
       const id = `f_${field.key}`;
-      const element = document.getElementById(id);
-      
-      if (!element) return;
+      console.log("DEBUG - Processing field:", field.key, "with ID:", id);
       
       if (field.type === "checkboxes") {
-        const checkedValues = Array.from(document.querySelectorAll(`input[name="${id}"]:checked`)).map(input => input.value);
+        const checkboxes = document.querySelectorAll(`input[name="${id}"]`);
+        console.log("DEBUG - Found checkboxes:", checkboxes.length);
+        const checkedValues = Array.from(checkboxes).filter(input => input.checked).map(input => input.value);
+        console.log("DEBUG - Checked values for", field.key, ":", checkedValues);
         values[field.key] = checkedValues.length > 0 ? checkedValues.join(", ") : "";
+        console.log("DEBUG - Final value for", field.key, ":", values[field.key]);
       } else {
-        values[field.key] = element.value?.trim() || "";
+        const element = document.getElementById(id);
+        if (element) {
+          values[field.key] = element.value?.trim() || "";
+          console.log("DEBUG - Value for", field.key, ":", values[field.key]);
+        }
       }
     });
     
+    console.log("DEBUG - Final values object:", values);
     return values;
   }
 
   function compile(template, values) {
-    return template.replace(/\[([^\]]+)\]/g, (_, key) => {
+    console.log("DEBUG - compile called with template:", template);
+    console.log("DEBUG - compile called with values:", values);
+    
+    const result = template.replace(/\[([^\]]+)\]/g, (match, key) => {
       const value = values[key];
+      console.log("DEBUG - Replacing", match, "with key:", key, "value:", value);
       return value && value.trim() ? value : `[${key}]`;
     });
+    
+    console.log("DEBUG - compile result:", result);
+    return result;
   }
 
   function generatePrompt() {
     const values = getValues();
+    console.log("DEBUG - All captured values:", values);
+    console.log("DEBUG - Nearby_Amenities specifically:", values.Nearby_Amenities);
     
     let template;
     if (activeModule === "listing" && Modules[activeModule].templates) {
@@ -190,6 +209,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     
     const compiledPrompt = compile(template, values);
+    console.log("DEBUG - Final compiled prompt:", compiledPrompt);
     previewEl.textContent = compiledPrompt;
     previewContainer.style.display = "block";
     previewContainer.scrollIntoView({ behavior: "smooth" });
