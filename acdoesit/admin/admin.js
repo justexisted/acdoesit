@@ -1,7 +1,6 @@
 document.addEventListener('DOMContentLoaded', () => {
-  // Admin credentials (in production, this should be stored securely)
+  // Admin email (only this email can access admin)
   const ADMIN_EMAIL = 'justexisted@gmail.com';
-  const ADMIN_PASSWORD = 'admin123'; // You can change this password
   
   // DOM Elements
   const loginContainer = document.getElementById('loginContainer');
@@ -36,6 +35,38 @@ document.addEventListener('DOMContentLoaded', () => {
   let filteredData = [];
   let isAuthenticated = false;
 
+  // Google OAuth Admin Sign-In Handler
+  window.handleAdminGoogleSignIn = function(response) {
+    // Decode the JWT token from Google
+    const responsePayload = decodeJwtResponse(response.credential);
+    
+    console.log('Google Sign-In Response:', responsePayload);
+    
+    // Check if this is the admin email
+    if (responsePayload.email === ADMIN_EMAIL) {
+      // Store admin session
+      localStorage.setItem('adminAuthToken', responsePayload.email);
+      localStorage.setItem('adminName', responsePayload.name);
+      localStorage.setItem('adminPicture', responsePayload.picture);
+      
+      isAuthenticated = true;
+      showDashboard();
+      hideLoginError();
+    } else {
+      showLoginError(`Access denied. Only ${ADMIN_EMAIL} can access admin dashboard.`);
+    }
+  };
+
+  // Decode JWT token from Google
+  function decodeJwtResponse(token) {
+    const base64Url = token.split('.')[1];
+    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+    const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
+      return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+    }).join(''));
+    return JSON.parse(jsonPayload);
+  }
+
   // Check if user is already authenticated
   function checkAuthStatus() {
     const authToken = localStorage.getItem('adminAuthToken');
@@ -64,7 +95,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Handle login
   function handleLogin(email, password) {
-    if (email === ADMIN_EMAIL && password === ADMIN_PASSWORD) {
+    if (email === ADMIN_EMAIL && password === 'admin123') {
       localStorage.setItem('adminAuthToken', email);
       isAuthenticated = true;
       showDashboard();
