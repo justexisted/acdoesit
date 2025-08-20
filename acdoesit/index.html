@@ -10,6 +10,8 @@
     <link rel="stylesheet" href="styles.css">
     <link rel="icon" href="assets/favicon-16.png" type="image/png" sizes="16x16">
     <link rel="icon" href="favicon.ico">
+    <!-- Google Sign-In API -->
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
   </head>
   <script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
   <script>
@@ -19,6 +21,114 @@
   </script>
   <body>
     <a class="skip-link" href="start.html">Skip to free plan</a>
+
+    <!-- Authentication Header -->
+    <div class="auth-header">
+      <div class="container">
+        <div class="auth-content">
+          <div class="auth-left">
+            <span class="auth-logo">AC Does It</span>
+          </div>
+          <div class="auth-right">
+            <div id="auth-buttons" class="auth-buttons">
+              <button class="auth-btn auth-btn-signin" onclick="openSignInModal()">Sign in</button>
+              <button class="auth-btn auth-btn-signup" onclick="openSignUpModal()">Sign up</button>
+            </div>
+            <div id="user-status" class="user-status" style="display: none;">
+              <span class="user-greeting">Hello, <span id="user-first-name"></span></span>
+              <button class="auth-btn auth-btn-signout" onclick="signOut()">Sign out</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Authentication Modals -->
+    <div id="signInModal" class="auth-modal" style="display: none;">
+      <div class="auth-modal-content">
+        <div class="auth-modal-header">
+          <h2>Sign In</h2>
+          <button class="auth-modal-close" onclick="closeSignInModal()">&times;</button>
+        </div>
+        <div class="auth-modal-body">
+          <form id="signInForm" class="auth-form">
+            <div class="form-group">
+              <label for="signInEmail">Email</label>
+              <input type="email" id="signInEmail" name="email" required>
+            </div>
+            <div class="form-group">
+              <label for="signInPassword">Password</label>
+              <input type="password" id="signInPassword" name="password" required>
+            </div>
+            <button type="submit" class="auth-submit-btn">Sign In</button>
+          </form>
+          <div class="auth-divider">
+            <span>or</span>
+          </div>
+          <div id="g_id_onload"
+               data-client_id="YOUR_GOOGLE_CLIENT_ID"
+               data-callback="handleGoogleSignIn"
+               data-auto_prompt="false">
+          </div>
+          <div id="g_id_signin"
+               class="google-signin-btn"
+               data-type="standard"
+               data-size="large"
+               data-theme="outline"
+               data-text="sign_in_with"
+               data-shape="rectangular"
+               data-logo_alignment="left">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="signUpModal" class="auth-modal" style="display: none;">
+      <div class="auth-modal-content">
+        <div class="auth-modal-header">
+          <h2>Sign Up</h2>
+          <button class="auth-modal-close" onclick="closeSignUpModal()">&times;</button>
+        </div>
+        <div class="auth-modal-body">
+          <form id="signUpForm" class="auth-form">
+            <div class="form-group">
+              <label for="signUpFirstName">First Name</label>
+              <input type="text" id="signUpFirstName" name="firstName" required>
+            </div>
+            <div class="form-group">
+              <label for="signUpLastName">Last Name</label>
+              <input type="text" id="signUpLastName" name="lastName" required>
+            </div>
+            <div class="form-group">
+              <label for="signUpEmail">Email</label>
+              <input type="email" id="signUpEmail" name="email" required>
+            </div>
+            <div class="form-group">
+              <label for="signUpPassword">Password</label>
+              <input type="password" id="signUpPassword" name="password" required>
+            </div>
+            <button type="submit" class="auth-submit-btn">Sign Up</button>
+          </form>
+          <div class="auth-divider">
+            <span>or</span>
+          </div>
+          <div id="g_id_onload_signup"
+               data-client_id="YOUR_GOOGLE_CLIENT_ID"
+               data-callback="handleGoogleSignUp"
+               data-auto_prompt="false">
+          </div>
+          <div id="g_id_signin_signup"
+               class="google-signin-btn"
+               data-type="standard"
+               data-size="large"
+               data-theme="outline"
+               data-text="signup_with"
+               data-shape="rectangular"
+               data-logo_alignment="left">
+          </div>
+        </div>
+      </div>
+    </div>
 
     <!-- Icon sprites -->
     <svg aria-hidden="true" style="position:absolute;width:0;height:0;overflow:hidden">
@@ -142,6 +252,7 @@
       </div>
     </footer>
 
+    <script src="auth.js" defer></script>
     <script src="script.js" defer></script>
   </body>
   </html>
