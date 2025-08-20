@@ -165,9 +165,15 @@ class AuthSystem {
 
       // Simulate successful signup
       await this.simulateSignUp(userData);
-      this.showMessage('Account created successfully! You now have access to the AI Prompt Builder.', 'success');
-      this.closeAllModals();
+      
+      // Sign in the user first
       this.signIn(userData);
+      
+      // Show success message
+      this.showMessage('Account created successfully! You now have access to the AI Prompt Builder.', 'success');
+      
+      // Close modal after successful authentication
+      this.closeAllModals();
     } catch (error) {
       this.showMessage(error.message, 'error');
     }
@@ -189,7 +195,14 @@ class AuthSystem {
 
       // Simulate successful signin
       await this.simulateSignIn(credentials);
+      
+      // Sign in the user
+      this.signIn(user);
+      
+      // Show success message
       this.showMessage('Signed in successfully!', 'success');
+      
+      // Close modal after successful authentication
       this.closeAllModals();
     } catch (error) {
       this.showMessage(error.message, 'error');
@@ -263,8 +276,15 @@ class AuthSystem {
     // Update UI
     this.updateAuthUI();
     
-    // Trigger custom event
-    window.dispatchEvent(new CustomEvent('userSignedIn', { detail: user }));
+    // Verify authentication was successful
+    if (this.isAuthenticated && this.currentUser) {
+      console.log('User successfully authenticated:', this.currentUser.firstName);
+      
+      // Trigger custom event
+      window.dispatchEvent(new CustomEvent('userSignedIn', { detail: user }));
+    } else {
+      console.error('Authentication failed - user not properly set');
+    }
   }
 
   signOut() {
@@ -365,9 +385,40 @@ class AuthSystem {
 
   closeAllModals() {
     const modals = document.querySelectorAll('.auth-modal');
+    console.log(`Closing ${modals.length} modals`);
+    
     modals.forEach(modal => {
+      // Multiple ways to hide the modal
       modal.style.display = 'none';
+      modal.style.visibility = 'hidden';
+      modal.setAttribute('aria-hidden', 'true');
+      
+      // Remove any active classes
+      modal.classList.remove('active', 'show');
+      
+      console.log('Modal closed:', modal.id);
     });
+    
+    // Also clear any form data
+    this.clearFormData();
+    
+    // Remove any body scroll locks
+    document.body.style.overflow = '';
+    document.body.style.paddingRight = '';
+  }
+
+  clearFormData() {
+    // Clear sign up form
+    const signUpForm = document.getElementById('signUpForm');
+    if (signUpForm) {
+      signUpForm.reset();
+    }
+    
+    // Clear sign in form
+    const signInForm = document.getElementById('signInForm');
+    if (signInForm) {
+      signInForm.reset();
+    }
   }
 }
 
@@ -392,6 +443,9 @@ function handleGoogleSignIn(response) {
       // Sign in the user
       authSystem.signIn(user);
       authSystem.showMessage('Signed in with Google successfully!', 'success');
+      
+      // Close all modals after Google sign in
+      authSystem.closeAllModals();
     } catch (error) {
       console.error('Error processing Google sign-in:', error);
       authSystem.showMessage('Error signing in with Google. Please try again.', 'error');
@@ -406,31 +460,57 @@ function handleGoogleSignUp(response) {
 
 // Modal Functions
 function openSignInModal() {
-  document.getElementById('signInModal').style.display = 'flex';
-  // Reinitialize Google auth for the sign in modal
-  setTimeout(() => {
-    if (authSystem && typeof google !== 'undefined' && google.accounts) {
-      authSystem.initializeGoogleAuth();
-    }
-  }, 100);
+  const modal = document.getElementById('signInModal');
+  if (modal) {
+    modal.style.display = 'flex';
+    modal.style.visibility = 'visible';
+    modal.setAttribute('aria-hidden', 'false');
+    modal.classList.add('active');
+    
+    // Reinitialize Google auth for the sign in modal
+    setTimeout(() => {
+      if (authSystem && typeof google !== 'undefined' && google.accounts) {
+        authSystem.initializeGoogleAuth();
+      }
+    }, 100);
+  }
 }
 
 function closeSignInModal() {
-  document.getElementById('signInModal').style.display = 'none';
+  const modal = document.getElementById('signInModal');
+  if (modal) {
+    modal.style.display = 'none';
+    modal.style.visibility = 'hidden';
+    modal.setAttribute('aria-hidden', 'true');
+    modal.classList.remove('active');
+  }
 }
 
 function openSignUpModal() {
-  document.getElementById('signUpModal').style.display = 'flex';
-  // Reinitialize Google auth for the sign up modal
-  setTimeout(() => {
-    if (authSystem && typeof google !== 'undefined' && google.accounts) {
-      authSystem.initializeGoogleAuth();
-    }
-  }, 100);
+  const modal = document.getElementById('signUpModal');
+  if (modal) {
+    modal.style.display = 'flex';
+    modal.style.visibility = 'visible';
+    modal.setAttribute('aria-hidden', 'false');
+    modal.classList.add('active');
+    
+    // Reinitialize Google auth for the sign up modal
+    setTimeout(() => {
+      if (authSystem && typeof google !== 'undefined' && google.accounts) {
+        authSystem.initializeGoogleAuth();
+      }
+    }, 100);
+  }
 }
 
 function closeSignUpModal() {
-  document.getElementById('signUpModal').style.display = 'none';
+  const modal = document.getElementById('signUpModal');
+  if (modal) {
+    modal.style.display = 'none';
+    modal.style.visibility = 'hidden';
+    modal.setAttribute('aria-hidden', 'true');
+    modal.classList.remove('active');
+  }
 }
 
 function signOut() {
