@@ -270,6 +270,15 @@ input:focus, textarea:focus { outline: none; box-shadow: 0 0 0 6px var(--ring); 
 }
 
 
-.brand { margin-bottom: 16px; }
+.brand { 
+  margin-bottom: 16px; 
+  position: fixed;
+  top: 0;
+}
+
+.ai-prompt-btn {
+  background: #c5e1f9;
+}
+
 .mainLogo { height: 100px; width: auto; display: block; }
 @media (min-width: 780px) { .mainLogo { height: 40px; } }
