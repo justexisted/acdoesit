@@ -152,18 +152,13 @@ class AuthSystem {
       const firstName = document.getElementById('signUpFirstName').value.trim();
       const lastName = document.getElementById('signUpLastName').value.trim();
       const email = document.getElementById('signUpEmail').value.trim();
-      const password = document.getElementById('signUpPassword').value;
 
       // Validate data
-      if (!firstName || !lastName || !email || !password) {
+      if (!firstName || !lastName || !email) {
         throw new Error('All fields are required');
       }
-      
-      if (password.length < 6) {
-        throw new Error('Password must be at least 6 characters');
-      }
 
-      const userData = { firstName, lastName, email, password };
+      const userData = { firstName, lastName, email };
 
       // Simulate successful signup
       await this.simulateSignUp(userData);
@@ -216,12 +211,8 @@ class AuthSystem {
     await new Promise(resolve => setTimeout(resolve, 1000));
     
     // Validate data
-    if (!userData.firstName || !userData.lastName || !userData.email || !userData.password) {
+    if (!userData.firstName || !userData.lastName || !userData.email) {
       throw new Error('All fields are required');
-    }
-    
-    if (userData.password.length < 6) {
-      throw new Error('Password must be at least 6 characters');
     }
 
     // Store user data in localStorage (in a real app, this would be in a database)
@@ -230,7 +221,8 @@ class AuthSystem {
       firstName: userData.firstName,
       lastName: userData.lastName,
       email: userData.email,
-      createdAt: new Date().toISOString()
+      createdAt: new Date().toISOString(),
+      provider: 'email'
     };
 
     // Get existing users or create empty array
@@ -583,6 +575,8 @@ function handleGoogleSignIn(response) {
         createdAt: new Date().toISOString(),
         provider: 'google'
       };
+
+      console.log('Google user data:', user);
 
       // Sign in the user
       authSystem.signIn(user);

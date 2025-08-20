@@ -3,148 +3,55 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AC Does It - San Diego Real Estate Marketing</title>
+    <title>AC Does It — Get More Paying Customers</title>
+    <meta name="description" content="We build simple customer paths on mobile that turn your website visitors into paying clients. Guaranteed.">
+    <meta name="theme-color" content="#0b0b0b">
+    <link rel="preload" href="styles.css" as="style">
     <link rel="stylesheet" href="styles.css">
+    <link rel="icon" href="assets/favicon-16.png" type="image/png" sizes="16x16">
+    <link rel="icon" href="favicon.ico">
     <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 <body>
+    <a class="skip-link" href="start.html">Skip to free plan</a>
+
     <!-- Authentication Header -->
     <div class="auth-header">
-        <div class="auth-content">
-            <div class="auth-left">
-                <img src="assets/newlogo.png" alt="AC Does It" class="logo">
-                <span class="brand-text">AC Does It</span>
-            </div>
-            <div class="auth-right">
-                <div id="auth-buttons" class="auth-buttons">
-                    <button onclick="openSignInModal()" class="auth-btn auth-btn-signin">Sign In</button>
-                    <button onclick="openSignUpModal()" class="auth-btn auth-btn-signup">Sign Up</button>
+        <div class="container">
+            <div class="auth-content">
+                <div class="auth-left">
+                    <span class="auth-logo">AC Does It</span>
                 </div>
-                <div id="user-status" class="user-status" style="display: none;">
-                    <span class="user-greeting">Hello, <span id="user-first-name">User</span>!</span>
-                    <button onclick="signOut()" class="auth-btn auth-btn-signout">Sign Out</button>
+                <div class="auth-right">
+                    <div id="auth-buttons" class="auth-buttons">
+                        <button class="auth-btn auth-btn-signin" onclick="openSignInModal()">Sign in</button>
+                        <button class="auth-btn auth-btn-signup" onclick="openSignUpModal()">Sign up</button>
+                    </div>
+                    <div id="user-status" class="user-status" style="display: none;">
+                        <span class="user-greeting">Hello, <span id="user-first-name"></span></span>
+                        <button class="auth-btn auth-btn-signout" onclick="signOut()">Sign out</button>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Main Content -->
-    <main>
-        <!-- Hero Section -->
-        <section class="hero">
-            <div class="container">
-                <h1>Transform Your San Diego Real Estate Business</h1>
-                <p class="hero-subtitle">AI-powered marketing tools that generate leads and close deals faster</p>
-                
-                <!-- AI Prompt Builder Button - Only show if not authenticated -->
-                <div id="ai-prompt-builder-section" style="display: none;">
-                    <a href="./ai-prompt-builder/" class="btn btn-accent btn-lg">🚀 Open AI Prompt Builder</a>
-                </div>
-                
-                <!-- Get Free Access Button - Only show if not authenticated -->
-                <div id="get-free-access-section">
-                    <button onclick="openSignUpModal()" class="btn btn-accent btn-lg">Get Free Access to AI Prompt Builder</button>
-                </div>
-            </div>
-        </section>
-
-        <!-- Features Section -->
-        <section class="features">
-            <div class="container">
-                <h2>Why Choose AC Does It?</h2>
-                <div class="features-grid">
-                    <div class="feature-card">
-                        <div class="feature-icon">🤖</div>
-                        <h3>AI-Powered Prompts</h3>
-                        <p>Generate compelling property descriptions, social media content, and marketing materials in seconds</p>
-                    </div>
-                    <div class="feature-card">
-                        <div class="feature-icon">📱</div>
-                        <h3>Multi-Platform Ready</h3>
-                        <p>Create content optimized for Zillow, Instagram, Facebook, and more with one tool</p>
-                    </div>
-                    <div class="feature-card">
-                        <div class="feature-icon">🎯</div>
-                        <h3>San Diego Focused</h3>
-                        <p>Tailored specifically for San Diego neighborhoods, market trends, and local insights</p>
-                    </div>
-                    <div class="feature-card">
-                        <div class="feature-icon">⚡</div>
-                        <h3>Save Hours Daily</h3>
-                        <p>What used to take hours now takes minutes. Focus on what matters - closing deals</p>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- How It Works Section -->
-        <section class="how-it-works">
-            <div class="container">
-                <h2>How It Works</h2>
-                <div class="steps-grid">
-                    <div class="step">
-                        <div class="step-number">1</div>
-                        <h3>Sign Up Free</h3>
-                        <p>Create your account in seconds - no credit card required</p>
-                    </div>
-                    <div class="step">
-                        <div class="step-number">2</div>
-                        <h3>Choose Your Module</h3>
-                        <p>Select from Property Listing, Investment Analysis, Zoning Research, and more</p>
-                    </div>
-                    <div class="step">
-                        <div class="step-number">3</div>
-                        <h3>Fill in Details</h3>
-                        <p>Enter property information, target audience, and preferences</p>
-                    </div>
-                    <div class="step">
-                        <div class="step-number">4</div>
-                        <h3>Generate & Use</h3>
-                        <p>Get professional content ready to copy, paste, and convert leads</p>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- Final CTA Section -->
-        <section class="final-cta">
-            <div class="container">
-                <!-- Content for non-authenticated users -->
-                <div id="non-auth-content">
-                    <h2>Ready to Turn Your Website into Your #1 Salesperson?</h2>
-                    <p>Get free access to our AI Prompt Builder today.</p>
-                    <button onclick="openSignUpModal()" class="btn btn-accent btn-lg">Get Free Access to AI Prompt Builder</button>
-                </div>
-                
-                <!-- Content for authenticated users -->
-                <div id="auth-content" style="display: none;">
-                    <h2>Thank You for Letting Us Know!</h2>
-                    <p>You're all set up with access to our AI Prompt Builder. What would you like to do next?</p>
-                    <div class="auth-cta-buttons">
-                        <button onclick="requestAppointment()" class="btn btn-accent btn-lg">📞 Request an Appointment</button>
-                        <a href="./ai-prompt-builder/" class="btn btn-secondary btn-lg">🚀 Open the AI Prompt Builder</a>
-                    </div>
-                </div>
-            </div>
-        </section>
-    </main>
-
-    <!-- Sign In Modal -->
-    <div id="signInModal" class="auth-modal">
+    <!-- Authentication Modals -->
+    <div id="signInModal" class="auth-modal" style="display: none;">
         <div class="auth-modal-content">
             <div class="auth-modal-header">
                 <h2>Sign In</h2>
-                <button onclick="closeSignInModal()" class="auth-modal-close">&times;</button>
+                <button class="auth-modal-close" onclick="closeSignInModal()">&times;</button>
             </div>
             <div class="auth-modal-body">
-                <form id="signInForm">
+                <form id="signInForm" class="auth-form">
                     <div class="form-group">
                         <label for="signInEmail">Email</label>
-                        <input type="email" id="signInEmail" required>
+                        <input type="email" id="signInEmail" name="email" required>
                     </div>
                     <div class="form-group">
                         <label for="signInPassword">Password</label>
-                        <input type="password" id="signInPassword" required>
+                        <input type="password" id="signInPassword" name="password" required>
                     </div>
                     <button type="submit" class="auth-submit-btn">Sign In</button>
                 </form>
@@ -153,37 +60,30 @@
                     <span>or</span>
                 </div>
                 
-                <div id="g_id_signin" class="google-signin-btn">
-                    <!-- Google Sign-In button will be rendered here -->
-                </div>
+                <div id="g_id_signin" class="google-signin-btn"></div>
             </div>
         </div>
     </div>
 
-    <!-- Sign Up Modal -->
-    <div id="signUpModal" class="auth-modal">
+    <div id="signUpModal" class="auth-modal" style="display: none;">
         <div class="auth-modal-content">
             <div class="auth-modal-header">
                 <h2>Sign Up</h2>
-                <button onclick="closeSignUpModal()" class="auth-modal-close">&times;</button>
+                <button class="auth-modal-close" onclick="closeSignUpModal()">&times;</button>
             </div>
             <div class="auth-modal-body">
-                <form id="signUpForm">
+                <form id="signUpForm" class="auth-form">
                     <div class="form-group">
                         <label for="signUpFirstName">First Name</label>
-                        <input type="text" id="signUpFirstName" required>
+                        <input type="text" id="signUpFirstName" name="firstName" required>
                     </div>
                     <div class="form-group">
                         <label for="signUpLastName">Last Name</label>
-                        <input type="text" id="signUpLastName" required>
+                        <input type="text" id="signUpLastName" name="lastName" required>
                     </div>
                     <div class="form-group">
                         <label for="signUpEmail">Email</label>
-                        <input type="email" id="signUpEmail" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="signUpPassword">Password</label>
-                        <input type="password" id="signUpPassword" required>
+                        <input type="email" id="signUpEmail" name="email" required>
                     </div>
                     <button type="submit" class="auth-submit-btn">Sign Up</button>
                 </form>
@@ -192,39 +92,158 @@
                     <span>or</span>
                 </div>
                 
-                <div id="g_id_signin_signup" class="google-signin-btn">
-                    <!-- Google Sign-Up button will be rendered here -->
-                </div>
+                <div id="g_id_signin_signup" class="google-signin-btn"></div>
             </div>
         </div>
     </div>
 
+    <!-- Icon sprites -->
+    <svg aria-hidden="true" style="position:absolute;width:0;height:0;overflow:hidden">
+        <symbol id="icon-check" viewBox="0 0 24 24">
+            <path fill="currentColor" d="M9 16.2l-3.5-3.5-1.4 1.4L9 19 20.3 7.7 18.9 6.3z"/>
+        </symbol>
+        <symbol id="icon-x" viewBox="0 0 24 24">
+            <path fill="currentColor" d="M18.3 5.7L12 12l6.3 6.3-1.4 1.4L10.6 13.4 4.3 19.7 2.9 18.3 9.2 12 2.9 5.7 4.3 4.3l6.3 6.3 6.3-6.3z"/>
+        </symbol>
+    </svg>
+
+    <header class="section hero" id="top">
+        <div class="container">
+            <div class="brand">
+                <img src="assets/newlogo.png" alt="AC Does It" class="mainLogo">
+            </div>
+            <div id="ai-prompt-builder-section" style="text-align: center; margin-bottom: 20px; display: none;">
+                <a href="./ai-prompt-builder/" class="btn ai-prompt-btn">AI Prompt Builder</a>
+            </div>
+            <h1 class="headline">Your Website Is Costing You Customers.</h1>
+            <p class="subhead">We build simple solutions that turn your website visitors into paying clients. Guaranteed.</p>
+            <div style="text-align: center; margin-top: 32px;">
+                <a href="role.html" class="btn btn-accent btn-lg">Start Now, Risk-Free</a>
+            </div>
+        </div>
+    </header>
+
+    <section class="section problem" id="problem">
+        <div class="container">
+            <h2>Does This Sound Familiar?</h2>
+            <div class="problem-grid">
+                <div class="problem-card problem-bad">
+                    <div class="problem-card-head">
+                        <span class="icon bad" aria-hidden="true"><svg><use href="#icon-x"></use></svg></span>
+                        <h3>Your Current Website</h3>
+                    </div>
+                    <ul class="list list-bad">
+                        <li><span class="list-icon" aria-hidden="true"><svg><use href="#icon-x"></use></svg></span>Looks nice, but doesn't sell.</li>
+                        <li><span class="list-icon" aria-hidden="true"><svg><use href="#icon-x"></use></svg></span>Looks bad on mobile.</li>
+                        <li><span class="list-icon" aria-hidden="true"><svg><use href="#icon-x"></use></svg></span>Generates zero leads.</li>
+                    </ul>
+                </div>
+                <div class="problem-card problem-good">
+                    <div class="problem-card-head">
+                        <span class="icon good" aria-hidden="true"><svg><use href="#icon-check"></use></svg></span>
+                        <h3>A Website That Sells</h3>
+                    </div>
+                    <ul class="list list-good">
+                        <li><span class="list-icon" aria-hidden="true"><svg><use href="#icon-check"></use></svg></span>Is a 24/7 sales asset.</li>
+                        <li><span class="list-icon" aria-hidden="true"><svg><use href="#icon-check"></use></svg></span>Guides customers efficiently.</li>
+                        <li><span class="list-icon" aria-hidden="true"><svg><use href="#icon-check"></use></svg></span>Delivers qualified leads daily.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="section solution" id="solution">
+        <div class="container">
+            <h2>Our 3-Step Plan to Get You Customers</h2>
+            <div class="cards">
+                <article class="card">
+                    <div class="card-number">1</div>
+                    <h3 class="card-title">We Find Your Dream Customer</h3>
+                    <p class="card-desc">We identify exactly who your best customers are and what they need to see to make a purchase.</p>
+                </article>
+                <article class="card">
+                    <div class="card-number">2</div>
+                    <h3 class="card-title">We Build Their Perfect Path</h3>
+                    <p class="card-desc">We design a clear, simple journey on your website that makes buying from you the obvious choice.</p>
+                </article>
+                <article class="card">
+                    <div class="card-number">3</div>
+                    <h3 class="card-title">You Get More Business</h3>
+                    <p class="card-desc">We launch the system and you get a predictable flow of new leads and sales from your website.</p>
+                </article>
+            </div>
+        </div>
+    </section>
+
+    <section class="section offer" id="offer">
+        <div class="container">
+            <div class="offer-box" role="region" aria-label="Guarantee">
+                <h2>Our Guarantee.</h2>
+                <p class="offer-copy"><strong>We will build you a complete and professional system on your website. If you don't see a measurable increase in qualified leads within 90 days, you stop paying us until you do.</strong></p>
+                <a href="start.html" class="btn btn-accent btn-lg">Start Now, Risk-Free</a>
+            </div>
+        </div>
+    </section>
+
+    <section class="section proof" id="proof">
+        <div class="container">
+            <h2>The Results</h2>
+            <blockquote>
+                "I was skeptical, but my phone started ringing the first week. We doubled our online leads in 60 days."
+                <cite>— Jane Doe, CEO of AwesomeCo</cite>
+            </blockquote>
+            <div class="logos" aria-label="Clients Include">
+                <div class="logo">Logo</div>
+                <div class="logo">Logo</div>
+                <div class="logo">Logo</div>
+                <div class="logo">Logo</div>
+                <div class="logo">Logo</div>
+            </div>
+        </div>
+    </section>
+
+    <section class="section final-cta" id="final-cta">
+        <div class="container">
+            <!-- Content for non-authenticated users -->
+            <div id="non-auth-content">
+                <h2>Ready to turn your website into your #1 salesperson?</h2>
+                <p>Get free access to our AI Prompt Builder today.</p>
+                <button onclick="openSignUpModal()" class="btn btn-accent btn-lg">Get Free Access to AI Prompt Builder</button>
+            </div>
+            
+            <!-- Content for authenticated users -->
+            <div id="auth-content" style="display: none;">
+                <h2>Thank you for letting us know!</h2>
+                <p>You're all set up with access to our AI Prompt Builder.</p>
+                <a href="./ai-prompt-builder/" class="btn btn-accent btn-lg">🚀 Open the AI Prompt Builder</a>
+            </div>
+        </div>
+    </section>
+
+    <footer class="section footer">
+        <div class="container">
+            <p>© <span id="year"></span> AC Does It. All rights reserved.</p>
+        </div>
+    </footer>
+
     <script src="auth.js"></script>
     <script>
-        // Function to request appointment
-        function requestAppointment() {
-            // You can customize this to open a calendar booking system, contact form, etc.
-            alert('Thank you for your interest! We\'ll contact you within 24 hours to schedule your appointment.');
-        }
-
         // Function to check authentication status and update UI
         function updatePageForAuthStatus() {
             const currentUser = JSON.parse(localStorage.getItem('currentUser'));
             const aiPromptBuilderSection = document.getElementById('ai-prompt-builder-section');
-            const getFreeAccessSection = document.getElementById('get-free-access-section');
             const nonAuthContent = document.getElementById('non-auth-content');
             const authContent = document.getElementById('auth-content');
 
             if (currentUser && currentUser.firstName) {
                 // User is authenticated
                 if (aiPromptBuilderSection) aiPromptBuilderSection.style.display = 'block';
-                if (getFreeAccessSection) getFreeAccessSection.style.display = 'none';
                 if (nonAuthContent) nonAuthContent.style.display = 'none';
                 if (authContent) authContent.style.display = 'block';
             } else {
                 // User is not authenticated
                 if (aiPromptBuilderSection) aiPromptBuilderSection.style.display = 'none';
-                if (getFreeAccessSection) getFreeAccessSection.style.display = 'block';
                 if (nonAuthContent) nonAuthContent.style.display = 'block';
                 if (authContent) authContent.style.display = 'none';
             }
