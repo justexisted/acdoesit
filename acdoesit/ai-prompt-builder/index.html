@@ -3,8 +3,10 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>AI Prompt Builder — San Diego Real Estate</title>
+    <title>AI Prompt Builder — AC Does It</title>
     <link rel="stylesheet" href="../styles.css">
+    <!-- Google Sign-In API -->
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
     <style>
       .prompt-builder-wrap{min-height:100vh;display:flex;align-items:flex-start;padding-top:40px}
       .module-picker{display:grid;gap:12px;margin-bottom:24px}
@@ -56,18 +58,34 @@
     </style>
   </head>
   <body>
-    <header class="page-header">
-      <div class="header-content">
-        <div class="header-logo">
-          <img src="../assets/newlogo.png" alt="AC Does It">
-          <span class="brand-text">AC Does It</span>
-        </div>
-        <div class="nav-row">
-          <a class="btn" href="../index.html">← Back to site</a>
-          <span></span>
+    <!-- Authentication Check -->
+    <div id="auth-required" style="display: none; min-height: 100vh; display: flex; align-items: center; justify-content: center; background: var(--bg);">
+      <div style="text-align: center; max-width: 500px; padding: 40px;">
+        <h1 style="color: var(--accent); margin-bottom: 16px;">Authentication Required</h1>
+        <p style="color: var(--muted); margin-bottom: 24px;">You need to sign up or sign in to access the AI Prompt Builder.</p>
+        <div style="display: flex; gap: 12px; justify-content: center;">
+          <a href="../contact.html" class="btn btn-accent">Sign Up for Free Access</a>
+          <a href="../index.html" class="btn">Back to Home</a>
         </div>
       </div>
-    </header>
+    </div>
+
+    <div id="app-content" style="display: none;">
+      <header class="page-header">
+        <div class="header-content">
+          <div class="header-logo">
+            <img src="../assets/newlogo.png" alt="AC Does It">
+            <span class="brand-text">AC Does It</span>
+          </div>
+          <div class="nav-row">
+            <a class="btn" href="../index.html">← Back to site</a>
+            <div style="display: flex; align-items: center; gap: 12px;">
+              <span id="user-welcome" style="color: var(--muted); font-size: 0.9rem;"></span>
+              <button onclick="signOut()" class="btn" style="padding: 6px 12px; font-size: 0.9rem;">Sign Out</button>
+            </div>
+          </div>
+        </div>
+      </header>
     
     <main class="section prompt-builder-wrap">
       <div class="container" style="width:min(1200px,100% - 24px)">
@@ -125,7 +143,65 @@
         </div>
       </div>
     </main>
+    </div>
 
+    <script src="../auth.js" defer></script>
+    <script>
+      // Authentication check for AI Prompt Builder
+      let authSystem;
+      
+      // Function to check authentication and show appropriate content
+      function checkAuthAndShowContent() {
+        const authRequired = document.getElementById('auth-required');
+        const appContent = document.getElementById('app-content');
+        const userWelcome = document.getElementById('user-welcome');
+        
+        // Get current user from localStorage
+        const savedUser = localStorage.getItem('currentUser');
+        
+        if (savedUser) {
+          try {
+            const user = JSON.parse(savedUser);
+            // User is authenticated, show the app
+            authRequired.style.display = 'none';
+            appContent.style.display = 'block';
+            if (userWelcome) {
+              userWelcome.textContent = `Welcome, ${user.firstName}!`;
+            }
+          } catch (error) {
+            // Invalid user data, show auth required
+            localStorage.removeItem('currentUser');
+            authRequired.style.display = 'flex';
+            appContent.style.display = 'none';
+          }
+        } else {
+          // No user, show auth required
+          authRequired.style.display = 'flex';
+          appContent.style.display = 'none';
+        }
+      }
+      
+      // Sign out function
+      function signOut() {
+        localStorage.removeItem('currentUser');
+        alert('You have been signed out.');
+        window.location.href = '../index.html';
+      }
+      
+      // Check authentication when page loads
+      document.addEventListener('DOMContentLoaded', () => {
+        checkAuthAndShowContent();
+      });
+      
+      // Listen for authentication events
+      window.addEventListener('userSignedIn', () => {
+        checkAuthAndShowContent();
+      });
+      
+      window.addEventListener('userSignedOut', () => {
+        checkAuthAndShowContent();
+      });
+    </script>
     <script src="./ai-prompt-builder.js" defer></script>
   </body>
 </html>

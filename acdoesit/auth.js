@@ -165,7 +165,7 @@ class AuthSystem {
 
       // Simulate successful signup
       await this.simulateSignUp(userData);
-      this.showMessage('Account created successfully!', 'success');
+      this.showMessage('Account created successfully! You now have access to the AI Prompt Builder.', 'success');
       this.closeAllModals();
       this.signIn(userData);
     } catch (error) {
@@ -299,14 +299,17 @@ class AuthSystem {
     const authButtons = document.getElementById('auth-buttons');
     const userStatus = document.getElementById('user-status');
     const userFirstName = document.getElementById('user-first-name');
+    const aiPromptBuilderSection = document.getElementById('ai-prompt-builder-section');
 
     if (this.isAuthenticated && this.currentUser) {
       if (authButtons) authButtons.style.display = 'none';
       if (userStatus) userStatus.style.display = 'flex';
       if (userFirstName) userFirstName.textContent = this.currentUser.firstName;
+      if (aiPromptBuilderSection) aiPromptBuilderSection.style.display = 'block';
     } else {
       if (authButtons) authButtons.style.display = 'flex';
       if (userStatus) userStatus.style.display = 'none';
+      if (aiPromptBuilderSection) aiPromptBuilderSection.style.display = 'none';
     }
   }
 

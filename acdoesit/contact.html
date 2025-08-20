@@ -3,8 +3,10 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Get your free plan</title>
+    <title>Get Free Access to AI Prompt Builder</title>
     <link rel="stylesheet" href="styles.css">
+    <!-- Google Sign-In API -->
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
   </head>
   <body>
     <header class="page-header">
@@ -22,51 +24,82 @@
     
     <main class="section step" style="min-height:100vh;display:flex;align-items:center;">
       <div class="container" style="width:min(800px,100% - 24px);">
-        <h1 style="font-size:clamp(1.6rem,6vw,2.4rem);margin-bottom:18px">Where should we send your plan?</h1>
-        <form id="lead-form" class="form" autocomplete="on" style="margin-top:8px">
-          <label class="field">
-            <span>Full name</span>
-            <input type="text" id="fullName" required placeholder="Jane Doe">
-          </label>
-          <label class="field">
-            <span>Email</span>
-            <input type="email" id="email" required placeholder="you@company.com">
-          </label>
-          <button type="submit" class="btn btn-accent btn-lg" style="margin-top:12px">Get My Free Customer Acquisition Plan</button>
-          <p id="submit-error" class="form-note" style="display:none;color:#ff6b6b">Couldn’t submit. Please try again in a moment.</p>
-          <p class="form-note">No spam. You'll hear from us within one business day.</p>
-        </form>
+        <h1 style="font-size:clamp(1.6rem,6vw,2.4rem);margin-bottom:18px">Get Free Access to AI Prompt Builder</h1>
+        <p style="color: var(--muted); margin-bottom: 24px; font-size: 1.1rem;">Sign up now to access our powerful AI Prompt Builder and start creating high-converting customer acquisition prompts.</p>
+        
+        <!-- Authentication Buttons -->
+        <div class="auth-signup-section" style="margin-top: 24px;">
+          <button onclick="openSignUpModal()" class="btn btn-accent btn-lg" style="margin-bottom: 16px; width: 100%;">Sign Up for Free Access</button>
+          <p style="text-align: center; color: var(--muted); margin: 16px 0;">Already have an account?</p>
+          <button onclick="openSignInModal()" class="btn" style="width: 100%;">Sign In</button>
+        </div>
+        
+        <p class="form-note" style="text-align: center; margin-top: 24px;">No spam. Get instant access to the AI Prompt Builder after signing up.</p>
       </div>
     </main>
+
+    <!-- Authentication Modals -->
+    <div id="signInModal" class="auth-modal" style="display: none;">
+      <div class="auth-modal-content">
+        <div class="auth-modal-header">
+          <h2>Sign In</h2>
+          <button class="auth-modal-close" onclick="closeSignInModal()">&times;</button>
+        </div>
+        <div class="auth-modal-body">
+          <form id="signInForm" class="auth-form">
+            <div class="form-group">
+              <label for="signInEmail">Email</label>
+              <input type="email" id="signInEmail" name="email" required>
+            </div>
+            <div class="form-group">
+              <label for="signInPassword">Password</label>
+              <input type="password" id="signInPassword" name="password" required>
+            </div>
+            <button type="submit" class="auth-submit-btn">Sign In</button>
+          </form>
+          <div class="auth-divider">
+            <span>or</span>
+          </div>
+          <div id="g_id_signin" class="google-signin-btn"></div>
+        </div>
+      </div>
+    </div>
+
+    <div id="signUpModal" class="auth-modal" style="display: none;">
+      <div class="auth-modal-content">
+        <div class="auth-modal-header">
+          <h2>Sign Up</h2>
+          <button class="auth-modal-close" onclick="closeSignUpModal()">&times;</button>
+        </div>
+        <div class="auth-modal-body">
+          <form id="signUpForm" class="auth-form">
+            <div class="form-group">
+              <label for="signUpFirstName">First Name</label>
+              <input type="text" id="signUpFirstName" name="firstName" required>
+            </div>
+            <div class="form-group">
+              <label for="signUpLastName">Last Name</label>
+              <input type="text" id="signUpLastName" name="lastName" required>
+            </div>
+            <div class="form-group">
+              <label for="signUpEmail">Email</label>
+              <input type="email" id="signUpEmail" name="email" required>
+            </div>
+            <div class="form-group">
+              <label for="signUpPassword">Password</label>
+              <input type="password" id="signUpPassword" name="password" required>
+            </div>
+            <button type="submit" class="auth-submit-btn">Sign Up</button>
+          </form>
+          <div class="auth-divider">
+            <span>or</span>
+          </div>
+          <div id="g_id_signin_signup" class="google-signin-btn"></div>
+        </div>
+      </div>
+    </div>
+    <script src="auth.js" defer></script>
     <script>
-      document.getElementById('lead-form').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const name = document.getElementById('fullName').value.trim();
-        const email = document.getElementById('email').value.trim();
-        const params = new URLSearchParams(window.location.search);
-        const payload = {
-          name,
-          email,
-          role: params.get('role') || '',
-          price: params.get('price') || ''
-        };
-        const errEl = document.getElementById('submit-error');
-        errEl.style.display = 'none';
-      
-        try {
-          const r = await fetch('/.netlify/functions/submit', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-          });
-          if (!r.ok) throw new Error('save failed');
-          alert('Thanks! Your plan request has been received. We will email you soon.');
-          window.location.href = 'index.html';
-        } catch {
-          errEl.style.display = 'block';
-        }
-      });
-      
       // Set back link with role parameter
       const back = document.getElementById('back');
       if (back) {
@@ -75,7 +108,13 @@
         if (params.get('role')) b.search = '?role=' + params.get('role');
         back.setAttribute('href', b.pathname + b.search);
       }
-      </script>
+
+      // Redirect to AI Prompt Builder after successful authentication
+      window.addEventListener('userSignedIn', (event) => {
+        alert('Welcome! You now have access to the AI Prompt Builder.');
+        window.location.href = './ai-prompt-builder/';
+      });
+    </script>
   </body>
   </html>
 
