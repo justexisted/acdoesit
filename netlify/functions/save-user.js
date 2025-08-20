@@ -1,9 +1,4 @@
 export async function handler(event, context) {
-  // Temporarily remove authentication check for testing
-  // if (!context.clientContext || !context.clientContext.user) {
-  //   return { statusCode: 401, body: 'Unauthorized' };
-  // }
-
   try {
     console.log('save-user function called');
     console.log('Event body:', event.body);
@@ -17,21 +12,16 @@ export async function handler(event, context) {
       return { statusCode: 400, body: 'Missing required user data' };
     }
 
-    const url = process.env.SUPABASE_URL;
-    const key = process.env.SUPABASE_SERVICE_ROLE;
+    // Use the user's existing Supabase configuration
+    const url = "https://vkaejxrjvxxfkwidakxq.supabase.co";
+    const key = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZrYWVqeHJqdnh4Zmt3aWRha3hxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU1MzEzNzUsImV4cCI6MjA3MTEwNzM3NX0.AWbLw3KEIZijsNbhCV2QO5IF8Ie5P90PfRohwXZjjBI";
     const table = 'users';
     
-    console.log('Supabase config check:', {
-      hasUrl: !!url,
-      hasKey: !!key,
-      url: url ? 'configured' : 'missing',
-      key: key ? 'configured' : 'missing'
+    console.log('Using Supabase config:', {
+      url: url,
+      key: key ? 'configured' : 'missing',
+      table: table
     });
-    
-    if (!url || !key) {
-      console.log('Supabase credentials not configured');
-      return { statusCode: 500, body: 'Server not configured' };
-    }
 
     // Prepare user data for database
     const dbUserData = {

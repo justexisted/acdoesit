@@ -1,96 +1,16 @@
 export async function handler(event, context) {
-  // Temporarily remove authentication check for testing
-  // if (!context.clientContext || !context.clientContext.user) {
-  //   return { statusCode: 401, body: 'Unauthorized' };
-  // }
-
   try {
     console.log('get-user-analytics function called');
     
-    const url = process.env.SUPABASE_URL;
-    const key = process.env.SUPABASE_SERVICE_ROLE;
+    // Use the user's existing Supabase configuration
+    const url = "https://vkaejxrjvxxfkwidakxq.supabase.co";
+    const key = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZrYWVqeHJqdnh4Zmt3aWRha3hxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU1MzEzNzUsImV4cCI6MjA3MTEwNzM3NX0.AWbLw3KEIZijsNbhCV2QO5IF8Ie5P90PfRohwXZjjBI";
     
-    console.log('Supabase config check:', {
-      hasUrl: !!url,
-      hasKey: !!key,
-      url: url ? 'configured' : 'missing',
+    console.log('Using Supabase config:', {
+      url: url,
       key: key ? 'configured' : 'missing'
     });
     
-    if (!url || !key) {
-      console.log('Supabase credentials not configured, returning test data');
-      // Return test data if Supabase is not configured
-      return { 
-        statusCode: 200, 
-        body: JSON.stringify([
-          {
-            id: 'test-user-1',
-            first_name: 'John',
-            last_name: 'Doe',
-            email: 'john@example.com',
-            created_at: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(), // 7 days ago
-            provider: 'email',
-            total_actions: 15,
-            last_activity: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(), // 2 days ago
-            engagement_score: 85,
-            feature_usage: {
-              'ai_prompt_builder': 8,
-              'property_saved': 3,
-              'address_saved': 2,
-              'neighborhood_saved': 2
-            },
-            location: {
-              city: 'San Diego',
-              region: 'CA',
-              country: 'US'
-            }
-          },
-          {
-            id: 'test-user-2',
-            first_name: 'Jane',
-            last_name: 'Smith',
-            email: 'jane@gmail.com',
-            created_at: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(), // 3 days ago
-            provider: 'google',
-            total_actions: 8,
-            last_activity: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(), // 1 day ago
-            engagement_score: 65,
-            feature_usage: {
-              'ai_prompt_builder': 5,
-              'property_saved': 2,
-              'address_saved': 1
-            },
-            location: {
-              city: 'Los Angeles',
-              region: 'CA',
-              country: 'US'
-            }
-          },
-          {
-            id: 'test-user-3',
-            first_name: 'Mike',
-            last_name: 'Johnson',
-            email: 'mike@example.com',
-            created_at: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString(), // 14 days ago
-            provider: 'email',
-            total_actions: 3,
-            last_activity: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(), // 10 days ago
-            engagement_score: 25,
-            feature_usage: {
-              'ai_prompt_builder': 2,
-              'property_saved': 1
-            },
-            location: {
-              city: 'Phoenix',
-              region: 'AZ',
-              country: 'US'
-            }
-          }
-        ]), 
-        headers: { 'Content-Type': 'application/json' } 
-      };
-    }
-
     // First, try to get users from the users table
     let users = [];
     try {
@@ -113,12 +33,24 @@ export async function handler(event, context) {
       } else {
         const errorText = await usersResp.text();
         console.log('Users table not found or empty:', errorText);
+        
+        // If users table doesn't exist, return empty array
+        return { 
+          statusCode: 200, 
+          body: JSON.stringify([]), 
+          headers: { 'Content-Type': 'application/json' } 
+        };
       }
     } catch (error) {
       console.log('Error fetching users from database:', error.message);
+      return { 
+        statusCode: 200, 
+        body: JSON.stringify([]), 
+        headers: { 'Content-Type': 'application/json' } 
+      };
     }
 
-    // If no users in database, return empty array for now
+    // If no users in database, return empty array
     if (!users || users.length === 0) {
       console.log('No users found in database, returning empty array');
       return { 
@@ -155,9 +87,37 @@ export async function handler(event, context) {
       console.log('Error fetching user activity:', error.message);
     }
 
+    // Get user properties data
+    let properties = [];
+    try {
+      console.log('Attempting to fetch user properties from Supabase...');
+      const propertiesQuery = new URLSearchParams({ 
+        select: '*', 
+        order: 'created_at.desc', 
+        limit: '10000' 
+      });
+      
+      const propertiesResp = await fetch(`${url}/rest/v1/user_properties?${propertiesQuery.toString()}`, {
+        headers: { apikey: key, Authorization: `Bearer ${key}` }
+      });
+      
+      console.log('Properties response status:', propertiesResp.status);
+      
+      if (propertiesResp.ok) {
+        properties = await propertiesResp.json();
+        console.log(`Found ${properties.length} properties in database`);
+      } else {
+        const errorText = await propertiesResp.text();
+        console.log('Properties table not found or empty:', errorText);
+      }
+    } catch (error) {
+      console.log('Error fetching user properties:', error.message);
+    }
+
     // Process and aggregate data
     const userAnalytics = users.map(user => {
       const userActivities = activities.filter(activity => activity.user_id === user.id);
+      const userProperties = properties.filter(prop => prop.user_id === user.id);
       
       // Calculate engagement metrics
       const totalActions = userActivities.length;
@@ -171,6 +131,12 @@ export async function handler(event, context) {
           featureUsage[activity.action] = (featureUsage[activity.action] || 0) + 1;
         }
       });
+
+      // Add property-related features
+      if (userProperties.length > 0) {
+        featureUsage['properties_saved'] = userProperties.length;
+        featureUsage['ai_prompt_builder'] = (featureUsage['ai_prompt_builder'] || 0) + userProperties.length;
+      }
 
       // Location data (from most recent activity)
       const recentActivity = userActivities.find(activity => activity.location);
@@ -195,7 +161,8 @@ export async function handler(event, context) {
         first_activity: firstActivity,
         feature_usage: featureUsage,
         location: location,
-        engagement_score: totalActions > 0 ? Math.min(100, totalActions * 10) : 0
+        engagement_score: totalActions > 0 ? Math.min(100, totalActions * 10) : 0,
+        properties_count: userProperties.length
       };
     });
 

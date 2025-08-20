@@ -131,18 +131,114 @@ document.addEventListener("DOMContentLoaded", () => {
   // Track page load
   trackUserActivity('page_view', { page: 'ai_prompt_builder' });
 
-  // Load saved properties from localStorage
-  function loadSavedProperties() {
-    try {
-      const currentUser = JSON.parse(localStorage.getItem('currentUser'));
-      if (!currentUser) return;
+  // Save current property to database
+  async function saveCurrentProperty() {
+    if (!window.authSystem || !window.authSystem.currentUser) {
+      showMessage('Please sign in to save properties', 'error');
+      return;
+    }
 
-      const saved = localStorage.getItem(`savedProperties_${currentUser.id}`);
-      savedProperties = saved ? JSON.parse(saved) : [];
-      displaySavedProperties();
+    try {
+      // Collect all form data
+      const formData = {};
+      Object.keys(Modules).forEach(moduleName => {
+        const module = Modules[moduleName];
+        Object.keys(module.fields).forEach(fieldName => {
+          const field = module.fields[fieldName];
+          const element = document.getElementById(field.id);
+          if (element) {
+            if (field.type === 'checkbox') {
+              formData[fieldName] = element.checked;
+            } else {
+              formData[fieldName] = element.value;
+            }
+          }
+        });
+      });
+
+      // Create property data
+      const propertyData = {
+        propertyName: formData.address || 'Unnamed Property',
+        address: formData.address || '',
+        neighborhood: formData.neighborhood || '',
+        propertyType: formData.propertyType || '',
+        targetAudience: formData.targetAudience || '',
+        uniqueFeatures: formData.uniqueFeatures || '',
+        formData: formData
+      };
+
+      console.log('Saving property to database:', propertyData);
+
+      // Save to database
+      const response = await fetch('/.netlify/functions/save-user-property', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId: window.authSystem.currentUser.id,
+          propertyData: propertyData
+        })
+      });
+
+      if (response.ok) {
+        showMessage('Property saved successfully! You can return to it anytime.', 'success');
+        
+        // Reload saved properties
+        await loadSavedProperties();
+        
+        // Track user activity
+        if (window.authSystem.currentUser) {
+          trackUserActivity('property_saved', {
+            property_name: propertyData.propertyName,
+            address: propertyData.address,
+            neighborhood: propertyData.neighborhood
+          });
+        }
+      } else {
+        const errorText = await response.text();
+        throw new Error(`Failed to save property: ${errorText}`);
+      }
     } catch (error) {
-      console.log('Error loading saved properties:', error);
-      savedProperties = [];
+      console.error('Error saving property:', error);
+      showMessage(`Failed to save property: ${error.message}`, 'error');
+    }
+  }
+
+  // Load saved properties from database
+  async function loadSavedProperties() {
+    if (!window.authSystem || !window.authSystem.currentUser) {
+      return;
+    }
+
+    try {
+      const response = await fetch('/.netlify/functions/get-user-properties', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId: window.authSystem.currentUser.id
+        })
+      });
+
+      if (response.ok) {
+        const properties = await response.json();
+        console.log('Loaded properties from database:', properties);
+        
+        // Update the saved properties array
+        savedProperties = properties.map(prop => ({
+          ...prop,
+          formData: prop.form_data || {}
+        }));
+        
+        // Display the properties
+        displaySavedProperties();
+      } else {
+        console.log('Failed to load properties from database');
+      }
+    } catch (error) {
+      console.log('Error loading properties from database:', error);
     }
   }
 
@@ -184,44 +280,6 @@ document.addEventListener("DOMContentLoaded", () => {
       
       propertyList.appendChild(propertyEl);
     });
-  }
-
-  // Save current property
-  function saveCurrentProperty() {
-    try {
-      const currentUser = JSON.parse(localStorage.getItem('currentUser'));
-      if (!currentUser) {
-        showMessage('Please sign in to save properties', 'error');
-        return;
-      }
-
-      const values = getValues();
-      if (!values.Property_Address && !values.Parcel_Address_or_APN) {
-        showMessage('Please enter a property address first', 'error');
-        return;
-      }
-
-      const propertyData = {
-        ...values,
-        module: activeModule,
-        savedAt: new Date().toISOString()
-      };
-
-      savedProperties.push(propertyData);
-      localStorage.setItem(`savedProperties_${currentUser.id}`, JSON.stringify(savedProperties));
-      
-      showMessage('Property saved successfully!', 'success');
-      displaySavedProperties();
-      
-      // Track property save
-      trackUserActivity('property_saved', {
-        module: activeModule,
-        property_address: values.Property_Address || values.Parcel_Address_or_APN
-      });
-    } catch (error) {
-      console.log('Error saving property:', error);
-      showMessage('Failed to save property', 'error');
-    }
   }
 
   // Load property into form
