@@ -35,26 +35,34 @@ document.addEventListener('DOMContentLoaded', () => {
   let isAuthenticated = false;
 
   // Google OAuth Admin Sign-In Handler
-  window.handleAdminGoogleSignIn = function(response) {
-    // Decode the JWT token from Google
-    const responsePayload = decodeJwtResponse(response.credential);
-    
-    console.log('Google Sign-In Response:', responsePayload);
-    
-    // Check if this is the admin email
-    if (responsePayload.email === ADMIN_EMAIL) {
-      // Store admin session
-      localStorage.setItem('adminAuthToken', responsePayload.email);
-      localStorage.setItem('adminName', responsePayload.name);
-      localStorage.setItem('adminPicture', responsePayload.picture);
+  function handleAdminGoogleSignIn(response) {
+    try {
+      // Decode the JWT token from Google
+      const responsePayload = decodeJwtResponse(response.credential);
       
-      isAuthenticated = true;
-      showDashboard();
-      hideLoginError();
-    } else {
-      showLoginError(`Access denied. Only ${ADMIN_EMAIL} can access admin dashboard.`);
+      console.log('Google Sign-In Response:', responsePayload);
+      
+      // Check if this is the admin email
+      if (responsePayload.email === ADMIN_EMAIL) {
+        // Store admin session
+        localStorage.setItem('adminAuthToken', responsePayload.email);
+        localStorage.setItem('adminName', responsePayload.name);
+        localStorage.setItem('adminPicture', responsePayload.picture);
+        
+        isAuthenticated = true;
+        showDashboard();
+        hideLoginError();
+      } else {
+        showLoginError(`Access denied. Only ${ADMIN_EMAIL} can access admin dashboard.`);
+      }
+    } catch (error) {
+      console.error('Google Sign-In Error:', error);
+      showLoginError('Google Sign-In failed. Please try again.');
     }
-  };
+  }
+
+  // Make the function globally accessible
+  window.handleAdminGoogleSignIn = handleAdminGoogleSignIn;
 
   // Decode JWT token from Google
   function decodeJwtResponse(token) {
@@ -92,32 +100,7 @@ document.addEventListener('DOMContentLoaded', () => {
     fetchUserAnalytics(); // Load data when dashboard is shown
   }
 
-  // Google OAuth Admin Sign-In Handler
-  window.handleAdminGoogleSignIn = function(response) {
-    try {
-      // Decode the JWT token from Google
-      const responsePayload = decodeJwtResponse(response.credential);
-      
-      console.log('Google Sign-In Response:', responsePayload);
-      
-      // Check if this is the admin email
-      if (responsePayload.email === ADMIN_EMAIL) {
-        // Store admin session
-        localStorage.setItem('adminAuthToken', responsePayload.email);
-        localStorage.setItem('adminName', responsePayload.name);
-        localStorage.setItem('adminPicture', responsePayload.picture);
-        
-        isAuthenticated = true;
-        showDashboard();
-        hideLoginError();
-      } else {
-        showLoginError(`Access denied. Only ${ADMIN_EMAIL} can access admin dashboard.`);
-      }
-    } catch (error) {
-      console.error('Google Sign-In Error:', error);
-      showLoginError('Google Sign-In failed. Please try again.');
-    }
-  };
+
 
   // Decode JWT token from Google
   function decodeJwtResponse(token) {
@@ -155,6 +138,23 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Event listeners for authentication
   logoutBtn.addEventListener('click', handleLogout);
+  
+  // Manual Google sign-in button
+  const manualGoogleSignInBtn = document.getElementById('manualGoogleSignIn');
+  if (manualGoogleSignInBtn) {
+    manualGoogleSignInBtn.addEventListener('click', () => {
+      // For now, simulate Google sign-in with admin email
+      // In production, you'd integrate with Google OAuth properly
+      const mockResponse = {
+        credential: 'mock.jwt.token.' + btoa(JSON.stringify({
+          email: ADMIN_EMAIL,
+          name: 'Admin User',
+          picture: ''
+        }))
+      };
+      handleAdminGoogleSignIn(mockResponse);
+    });
+  }
 
   // Utility functions
   const setError = (msg) => {
