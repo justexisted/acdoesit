@@ -155,9 +155,9 @@
             color: #374151;
         }
 
+        /* Remove required field indicators */
         .field.required span::after {
-            content: " *";
-            color: #ef4444;
+            content: "";
         }
 
         .field input,
@@ -255,8 +255,11 @@
         }
 
         .checkbox-label input[type="checkbox"] {
-            width: auto;
+            width: 20px;
+            height: 20px;
             margin-right: 8px;
+            accent-color: var(--accent, #3b82f6);
+            cursor: pointer;
         }
 
         .checkbox-text {
@@ -424,6 +427,102 @@
         .auth-btn-secondary:hover {
             background: #4b5563;
         }
+
+        /* Saved Properties Section */
+        .saved-properties {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            border: 1px solid #e5e7eb;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            margin-bottom: 30px;
+        }
+
+        .saved-properties h3 {
+            margin: 0 0 20px 0;
+            color: #1f2937;
+            font-size: 1.3rem;
+        }
+
+        .property-list {
+            display: grid;
+            gap: 15px;
+        }
+
+        .property-item {
+            background: #f9fafb;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 15px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .property-item:hover {
+            background: #f3f4f6;
+            border-color: var(--accent, #3b82f6);
+        }
+
+        .property-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .property-name {
+            font-weight: 600;
+            color: #1f2937;
+            font-size: 1.1rem;
+        }
+
+        .property-address {
+            color: #6b7280;
+            font-size: 0.9rem;
+        }
+
+        .property-details {
+            color: #374151;
+            font-size: 0.9rem;
+            line-height: 1.4;
+        }
+
+        .property-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .property-btn {
+            background: #6b7280;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            transition: background-color 0.2s;
+        }
+
+        .property-btn:hover {
+            background: #4b5563;
+        }
+
+        .property-btn-primary {
+            background: var(--accent, #3b82f6);
+        }
+
+        .property-btn-primary:hover {
+            background: #2563eb;
+        }
+
+        .property-btn-danger {
+            background: #ef4444;
+        }
+
+        .property-btn-danger:hover {
+            background: #dc2626;
+        }
     </style>
 </head>
 <body>
@@ -452,6 +551,14 @@
                 <a href="../index.html" class="back-btn">← Back</a>
             </div>
 
+            <!-- Saved Properties Section -->
+            <div class="saved-properties" id="saved-properties" style="display: none;">
+                <h3>💾 Saved Properties</h3>
+                <div class="property-list" id="property-list">
+                    <!-- Saved properties will be displayed here -->
+                </div>
+            </div>
+
             <div class="module-picker" id="module-picker">
                 <button class="module-btn active" data-module="listing">📝 Property Listing</button>
                 <button class="module-btn" data-module="investment">💰 Investment Analysis</button>
@@ -478,6 +585,7 @@
                     
                     <div class="action-buttons">
                         <button id="generate-btn" class="btn">🚀 Generate Prompt</button>
+                        <button id="save-property-btn" class="btn btn-secondary">💾 Save Property</button>
                     </div>
                 </div>
 
@@ -487,7 +595,7 @@
                     
                     <div class="action-buttons">
                         <button id="copy-btn" class="btn btn-secondary">📋 Copy to Clipboard</button>
-                        <button id="save-btn" class="btn">💾 Save to Account</button>
+                        <button id="save-prompt-btn" class="btn">💾 Save Prompt</button>
                     </div>
                 </div>
             </div>

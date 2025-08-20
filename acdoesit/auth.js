@@ -297,6 +297,12 @@ class AuthSystem {
 
   async saveUserToDatabase(user) {
     try {
+      console.log('Attempting to save user to database:', {
+        id: user.id,
+        email: user.email,
+        provider: user.provider || 'email'
+      });
+
       const response = await fetch('/.netlify/functions/save-user', {
         method: 'POST',
         headers: {
@@ -307,11 +313,15 @@ class AuthSystem {
 
       if (response.ok) {
         console.log('User saved to database successfully');
+        return true;
       } else {
-        console.log('Failed to save user to database:', response.statusText);
+        const errorText = await response.text();
+        console.log('Failed to save user to database:', response.status, errorText);
+        return false;
       }
     } catch (error) {
       console.log('Error saving user to database:', error);
+      return false;
     }
   }
 

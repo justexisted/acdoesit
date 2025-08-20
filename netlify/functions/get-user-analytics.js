@@ -24,6 +24,7 @@ export async function handler(event, context) {
       
       if (usersResp.ok) {
         users = await usersResp.json();
+        console.log(`Found ${users.length} users in database`);
       } else {
         console.log('Users table not found or empty, will create from localStorage data');
       }
@@ -58,6 +59,7 @@ export async function handler(event, context) {
       
       if (activityResp.ok) {
         activities = await activityResp.json();
+        console.log(`Found ${activities.length} activities in database`);
       }
     } catch (error) {
       console.log('Error fetching user activity:', error.message);
@@ -84,13 +86,20 @@ export async function handler(event, context) {
       const recentActivity = userActivities.find(activity => activity.location);
       const location = recentActivity?.location || {};
 
+      // Handle different field name variations for Google vs email users
+      const firstName = user.firstName || user.first_name || 'Unknown';
+      const lastName = user.lastName || user.last_name || 'Unknown';
+      const email = user.email || 'No Email';
+      const createdAt = user.createdAt || user.created_at || new Date().toISOString();
+      const provider = user.provider || 'email';
+
       return {
         id: user.id,
-        first_name: user.firstName || user.first_name,
-        last_name: user.lastName || user.last_name,
-        email: user.email,
-        created_at: user.createdAt || user.created_at,
-        provider: user.provider || 'email',
+        first_name: firstName,
+        last_name: lastName,
+        email: email,
+        created_at: createdAt,
+        provider: provider,
         total_actions: totalActions,
         last_activity: lastActivity,
         first_activity: firstActivity,
@@ -99,6 +108,8 @@ export async function handler(event, context) {
         engagement_score: totalActions > 0 ? Math.min(100, totalActions * 10) : 0
       };
     });
+
+    console.log(`Processed ${userAnalytics.length} users for analytics`);
 
     return { 
       statusCode: 200, 
