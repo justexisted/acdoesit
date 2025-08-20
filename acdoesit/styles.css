@@ -607,6 +607,26 @@ input:focus, textarea:focus { outline: none; box-shadow: 0 0 0 6px var(--ring); 
   display: flex;
   justify-content: center;
   margin-top: 16px;
+  min-height: 40px;
+  width: 100%;
+}
+
+.google-signin-btn > div {
+  width: 100% !important;
+  max-width: 300px;
+}
+
+/* Fallback button styling */
+.google-signin-btn button[disabled] {
+  background: #f5f5f5;
+  color: #999;
+  border: 1px solid #ddd;
+  cursor: not-allowed;
+  width: 100%;
+  padding: 12px 24px;
+  border-radius: 6px;
+  font-size: 16px;
+  font-weight: 500;
 }
 
 /* Responsive adjustments */

@@ -18,6 +18,16 @@
     if (location.hash.includes('invite_token')) {
       location.replace('/admin/' + location.hash);
     }
+    
+    // Debug Google API loading
+    window.addEventListener('load', () => {
+      console.log('Page loaded, checking Google API...');
+      console.log('Google object:', typeof google !== 'undefined' ? google : 'undefined');
+      if (typeof google !== 'undefined') {
+        console.log('Google accounts:', google.accounts);
+        console.log('Google accounts.id:', google.accounts?.id);
+      }
+    });
   </script>
   <body>
     <a class="skip-link" href="start.html">Skip to free plan</a>

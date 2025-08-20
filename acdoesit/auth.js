@@ -41,46 +41,104 @@ class AuthSystem {
   }
 
   setupGoogleAuth() {
-    // Wait for Google Sign-In API to load
-    if (typeof google !== 'undefined' && google.accounts) {
-      this.initializeGoogleAuth();
-    } else {
-      // If Google API hasn't loaded yet, wait for it
-      window.addEventListener('load', () => {
-        if (typeof google !== 'undefined' && google.accounts) {
-          this.initializeGoogleAuth();
-        }
-      });
+    console.log('Setting up Google Auth...');
+    
+    // Function to check and initialize Google Auth
+    const checkAndInitGoogleAuth = () => {
+      if (typeof google !== 'undefined' && google.accounts && google.accounts.id) {
+        console.log('Google API loaded, initializing...');
+        this.initializeGoogleAuth();
+        return true;
+      }
+      return false;
+    };
+
+    // Try to initialize immediately
+    if (checkAndInitGoogleAuth()) {
+      return;
     }
+
+    // If not ready, wait for load event
+    window.addEventListener('load', () => {
+      if (checkAndInitGoogleAuth()) {
+        return;
+      }
+      
+      // If still not ready, try with intervals
+      const interval = setInterval(() => {
+        if (checkAndInitGoogleAuth()) {
+          clearInterval(interval);
+        }
+      }, 500);
+      
+      // Stop trying after 10 seconds
+      setTimeout(() => {
+        clearInterval(interval);
+        console.log('Google API failed to load after 10 seconds');
+      }, 10000);
+    });
   }
 
   initializeGoogleAuth() {
     try {
+      console.log('Initializing Google Auth...');
+      
       // Initialize Google Sign-In for sign in modal
-      if (document.getElementById('g_id_onload')) {
+      if (document.getElementById('g_id_signin')) {
         google.accounts.id.initialize({
           client_id: '6812355521-ruaqh0ccemnpnu325ihblctbvnjj0ijf.apps.googleusercontent.com',
           callback: handleGoogleSignIn
         });
+        
         google.accounts.id.renderButton(
           document.getElementById('g_id_signin'),
-          { theme: 'outline', size: 'large', text: 'sign_in_with' }
+          { 
+            theme: 'outline', 
+            size: 'large', 
+            text: 'sign_in_with',
+            width: 300,
+            type: 'standard'
+          }
         );
+        console.log('Sign in Google button rendered');
       }
 
       // Initialize Google Sign-In for sign up modal
-      if (document.getElementById('g_id_onload_signup')) {
+      if (document.getElementById('g_id_signin_signup')) {
         google.accounts.id.initialize({
           client_id: '6812355521-ruaqh0ccemnpnu325ihblctbvnjj0ijf.apps.googleusercontent.com',
           callback: handleGoogleSignUp
         });
+        
         google.accounts.id.renderButton(
           document.getElementById('g_id_signin_signup'),
-          { theme: 'outline', size: 'large', text: 'signup_with' }
+          { 
+            theme: 'outline', 
+            size: 'large', 
+            text: 'signup_with',
+            width: 300,
+            type: 'standard'
+          }
         );
+        console.log('Sign up Google button rendered');
       }
     } catch (error) {
       console.error('Error initializing Google Auth:', error);
+      this.showGoogleAuthError();
+    }
+  }
+
+  showGoogleAuthError() {
+    // Show a message that Google auth failed to load
+    const signInGoogleBtn = document.getElementById('g_id_signin');
+    const signUpGoogleBtn = document.getElementById('g_id_signin_signup');
+    
+    if (signInGoogleBtn) {
+      signInGoogleBtn.innerHTML = '<button class="auth-btn auth-btn-signin" disabled>Google Sign-In Unavailable</button>';
+    }
+    
+    if (signUpGoogleBtn) {
+      signUpGoogleBtn.innerHTML = '<button class="auth-btn auth-btn-signin" disabled>Google Sign-Up Unavailable</button>';
     }
   }
 
@@ -346,6 +404,12 @@ function handleGoogleSignUp(response) {
 // Modal Functions
 function openSignInModal() {
   document.getElementById('signInModal').style.display = 'flex';
+  // Reinitialize Google auth for the sign in modal
+  setTimeout(() => {
+    if (authSystem && typeof google !== 'undefined' && google.accounts) {
+      authSystem.initializeGoogleAuth();
+    }
+  }, 100);
 }
 
 function closeSignInModal() {
@@ -354,6 +418,12 @@ function closeSignInModal() {
 
 function openSignUpModal() {
   document.getElementById('signUpModal').style.display = 'flex';
+  // Reinitialize Google auth for the sign up modal
+  setTimeout(() => {
+    if (authSystem && typeof google !== 'undefined' && google.accounts) {
+      authSystem.initializeGoogleAuth();
+    }
+  }, 100);
 }
 
 function closeSignUpModal() {
