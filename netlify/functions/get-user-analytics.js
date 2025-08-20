@@ -2,160 +2,117 @@ export async function handler(event, context) {
   try {
     console.log('get-user-analytics function called');
     
-    // Use the user's existing Supabase configuration
+    // Your Supabase configuration
     const url = "https://vkaejxrjvxxfkwidakxq.supabase.co";
     const key = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZrYWVqeHJqdnh4Zmt3aWRha3hxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU1MzEzNzUsImV4cCI6MjA3MTEwNzM3NX0.AWbLw3KEIZijsNbhCV2QO5IF8Ie5P90PfRohwXZjjBI";
     
-    console.log('Using Supabase config:', {
-      url: url,
-      key: key ? 'configured' : 'missing'
-    });
+    console.log('Using Supabase config:', { url: url, key: key ? 'configured' : 'missing' });
     
-    // First, try to get users from the users table
+    // Fetch users from 'users' table
     let users = [];
     try {
-      console.log('Attempting to fetch users from Supabase...');
-      const usersQuery = new URLSearchParams({ 
-        select: '*', 
-        order: 'created_at.desc', 
-        limit: '1000' 
+      console.log('Fetching users from users table...');
+      const usersResponse = await fetch(`${url}/rest/v1/users?select=*&order=created_at.desc`, {
+        headers: { 'apikey': key, 'Authorization': `Bearer ${key}` }
       });
       
-      const usersResp = await fetch(`${url}/rest/v1/users?${usersQuery.toString()}`, {
-        headers: { apikey: key, Authorization: `Bearer ${key}` }
-      });
+      console.log('Users response status:', usersResponse.status);
       
-      console.log('Users response status:', usersResp.status);
-      
-      if (usersResp.ok) {
-        users = await usersResp.json();
-        console.log(`Found ${users.length} users in Supabase database`);
+      if (usersResponse.ok) {
+        users = await usersResponse.json();
+        console.log(`Found ${users.length} users in database`);
       } else {
-        const errorText = await usersResp.text();
-        console.log('Users table not found or empty:', errorText);
-        
-        // If users table doesn't exist, return empty array
-        return { 
-          statusCode: 200, 
-          body: JSON.stringify([]), 
-          headers: { 'Content-Type': 'application/json' } 
-        };
+        console.log('Failed to fetch users, table may not exist yet');
       }
     } catch (error) {
-      console.log('Error fetching users from database:', error.message);
-      return { 
-        statusCode: 200, 
-        body: JSON.stringify([]), 
-        headers: { 'Content-Type': 'application/json' } 
-      };
+      console.log('Error fetching users:', error.message);
     }
-
-    // If no users in database, return empty array
+    
+    // If users table doesn't exist or is empty, return empty array
     if (!users || users.length === 0) {
-      console.log('No users found in database, returning empty array');
-      return { 
-        statusCode: 200, 
-        body: JSON.stringify([]), 
-        headers: { 'Content-Type': 'application/json' } 
+      console.log('No users found, returning empty array');
+      return {
+        statusCode: 200,
+        body: JSON.stringify([]),
+        headers: { 'Content-Type': 'application/json' }
       };
     }
 
-    // Get user activity data
+    // Fetch activities from 'user_activity' table
     let activities = [];
     try {
-      console.log('Attempting to fetch user activity from Supabase...');
-      const activityQuery = new URLSearchParams({ 
-        select: '*', 
-        order: 'timestamp.desc', 
-        limit: '10000' 
+      console.log('Fetching activities from user_activity table...');
+      const activitiesResponse = await fetch(`${url}/rest/v1/user_activity?select=*&order=timestamp.desc`, {
+        headers: { 'apikey': key, 'Authorization': `Bearer ${key}` }
       });
       
-      const activityResp = await fetch(`${url}/rest/v1/user_activity?${activityQuery.toString()}`, {
-        headers: { apikey: key, Authorization: `Bearer ${key}` }
-      });
-      
-      console.log('Activity response status:', activityResp.status);
-      
-      if (activityResp.ok) {
-        activities = await activityResp.json();
+      if (activitiesResponse.ok) {
+        activities = await activitiesResponse.json();
         console.log(`Found ${activities.length} activities in database`);
       } else {
-        const errorText = await activityResp.text();
-        console.log('Activity table not found or empty:', errorText);
+        console.log('Failed to fetch activities, table may not exist yet');
       }
     } catch (error) {
-      console.log('Error fetching user activity:', error.message);
+      console.log('Error fetching activities:', error.message);
     }
 
-    // Get user properties data
+    // Fetch properties from 'user_properties' table
     let properties = [];
     try {
-      console.log('Attempting to fetch user properties from Supabase...');
-      const propertiesQuery = new URLSearchParams({ 
-        select: '*', 
-        order: 'created_at.desc', 
-        limit: '10000' 
+      console.log('Fetching properties from user_properties table...');
+      const propertiesResponse = await fetch(`${url}/rest/v1/user_properties?select=*&order=created_at.desc`, {
+        headers: { 'apikey': key, 'Authorization': `Bearer ${key}` }
       });
       
-      const propertiesResp = await fetch(`${url}/rest/v1/user_properties?${propertiesQuery.toString()}`, {
-        headers: { apikey: key, Authorization: `Bearer ${key}` }
-      });
-      
-      console.log('Properties response status:', propertiesResp.status);
-      
-      if (propertiesResp.ok) {
-        properties = await propertiesResp.json();
+      if (propertiesResponse.ok) {
+        properties = await propertiesResponse.json();
         console.log(`Found ${properties.length} properties in database`);
       } else {
-        const errorText = await propertiesResp.text();
-        console.log('Properties table not found or empty:', errorText);
+        console.log('Failed to fetch properties, table may not exist yet');
       }
     } catch (error) {
-      console.log('Error fetching user properties:', error.message);
+      console.log('Error fetching properties:', error.message);
     }
 
-    // Process and aggregate data
+    // Process user analytics
     const userAnalytics = users.map(user => {
       const userActivities = activities.filter(activity => activity.user_id === user.id);
       const userProperties = properties.filter(prop => prop.user_id === user.id);
       
       // Calculate engagement metrics
-      const totalActions = userActivities.length;
-      const lastActivity = userActivities.length > 0 ? userActivities[0].timestamp : null;
-      const firstActivity = userActivities.length > 0 ? userActivities[userActivities.length - 1].timestamp : null;
+      const totalActions = userActivities.length + userProperties.length;
+      const lastActivity = userActivities.length > 0 ? 
+        userActivities[0].timestamp : null;
+      const firstActivity = userActivities.length > 0 ? 
+        userActivities[userActivities.length - 1].timestamp : null;
       
-      // Feature usage breakdown
+      // Calculate feature usage
       const featureUsage = {};
       userActivities.forEach(activity => {
         if (activity.action) {
           featureUsage[activity.action] = (featureUsage[activity.action] || 0) + 1;
         }
       });
-
-      // Add property-related features
+      
       if (userProperties.length > 0) {
         featureUsage['properties_saved'] = userProperties.length;
         featureUsage['ai_prompt_builder'] = (featureUsage['ai_prompt_builder'] || 0) + userProperties.length;
       }
-
-      // Location data (from most recent activity)
-      const recentActivity = userActivities.find(activity => activity.location);
-      const location = recentActivity?.location || {};
-
-      // Handle different field name variations for Google vs email users
-      const firstName = user.firstName || user.first_name || 'Unknown';
-      const lastName = user.lastName || user.last_name || 'Unknown';
-      const email = user.email || 'No Email';
-      const createdAt = user.createdAt || user.created_at || new Date().toISOString();
-      const provider = user.provider || 'email';
-
+      
+      // Calculate location (default to San Diego for now)
+      const location = {
+        city: 'San Diego',
+        region: 'CA',
+        country: 'US'
+      };
+      
       return {
         id: user.id,
-        first_name: firstName,
-        last_name: lastName,
-        email: email,
-        created_at: createdAt,
-        provider: provider,
+        first_name: user.first_name,
+        last_name: user.last_name,
+        email: user.email,
+        created_at: user.created_at,
+        provider: user.provider,
         total_actions: totalActions,
         last_activity: lastActivity,
         first_activity: firstActivity,
@@ -167,14 +124,19 @@ export async function handler(event, context) {
     });
 
     console.log(`Processed ${userAnalytics.length} users for analytics`);
-
-    return { 
-      statusCode: 200, 
-      body: JSON.stringify(userAnalytics), 
-      headers: { 'Content-Type': 'application/json' } 
+    
+    return {
+      statusCode: 200,
+      body: JSON.stringify(userAnalytics),
+      headers: { 'Content-Type': 'application/json' }
     };
+    
   } catch (error) {
-    console.error('Error getting user analytics:', error);
-    return { statusCode: 500, body: 'Internal server error' };
+    console.error('Error in get-user-analytics:', error);
+    return {
+      statusCode: 500,
+      body: JSON.stringify({ error: error.message }),
+      headers: { 'Content-Type': 'application/json' }
+    };
   }
 }

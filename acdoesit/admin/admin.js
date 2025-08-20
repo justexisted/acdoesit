@@ -419,43 +419,44 @@ document.addEventListener('DOMContentLoaded', () => {
     setSuccess(`Successfully loaded ${data.length} users`);
   }
 
-  // Fetch user analytics from Netlify function
+  // Fetch user analytics from database
   async function fetchUserAnalytics() {
     try {
       showLoading(true);
       setError('');
       
-      console.log('Admin dashboard: Starting to fetch user analytics...');
+      console.log('Admin dashboard: Starting to fetch user analytics from database...');
       
       const response = await fetch('/.netlify/functions/get-user-analytics');
       
       console.log('Admin dashboard: Response received:', {
         status: response.status,
         statusText: response.statusText,
-        ok: response.ok,
-        headers: Object.fromEntries(response.headers.entries())
+        ok: response.ok
       });
       
       if (!response.ok) {
         const errorText = await response.text();
-        console.error('Admin dashboard: Response not OK:', errorText);
         throw new Error(`Failed to fetch data: ${response.status} ${response.statusText} - ${errorText}`);
       }
       
       const data = await response.json();
-      
-      console.log('Admin dashboard: Data received:', {
-        type: typeof data,
-        isArray: Array.isArray(data),
-        length: Array.isArray(data) ? data.length : 'not an array',
-        data: data
+      console.log('Admin dashboard: Data received:', { 
+        type: typeof data, 
+        isArray: Array.isArray(data), 
+        length: Array.isArray(data) ? data.length : 'not an array' 
       });
       
       if (!Array.isArray(data)) {
         throw new Error(`Invalid data format received: expected array, got ${typeof data}`);
       }
       
-      console.log(`Admin dashboard: Successfully fetched ${data.length} users from analytics function`);
+      console.log(`Admin dashboard: Successfully fetched ${data.length} users from database`);
+      
+      if (data.length === 0) {
+        setError('No users found. Users will appear here after they sign up and use the AI Prompt Builder.');
+      }
+      
       render(data || []);
       
     } catch (error) {
@@ -536,9 +537,85 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
+  // Add test users for testing purposes
+  function addTestUsers() {
+    try {
+      const testUsers = [
+        {
+          id: 'test-user-1',
+          firstName: 'John',
+          lastName: 'Doe',
+          email: 'john@example.com',
+          createdAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
+          provider: 'email'
+        },
+        {
+          id: 'test-user-2',
+          firstName: 'Jane',
+          lastName: 'Smith',
+          email: 'jane@gmail.com',
+          createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
+          provider: 'google'
+        }
+      ];
+
+      // Add test users to localStorage
+      localStorage.setItem('users', JSON.stringify(testUsers));
+      
+      // Add some test properties for John
+      const johnProperties = [
+        {
+          Property_Address: '123 Main St, San Diego, CA',
+          Neighborhood: 'North Park',
+          Property_Type: 'Single-Family Home',
+          module: 'listing',
+          savedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString()
+        },
+        {
+          Property_Address: '456 Oak Ave, San Diego, CA',
+          Neighborhood: 'La Jolla',
+          Property_Type: 'Condo',
+          module: 'investment',
+          savedAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString()
+        }
+      ];
+      
+      localStorage.setItem('savedProperties_test-user-1', JSON.stringify(johnProperties));
+      
+      // Add some test properties for Jane
+      const janeProperties = [
+        {
+          Property_Address: '789 Pine St, San Diego, CA',
+          Neighborhood: 'Gaslamp',
+          Property_Type: 'Townhouse',
+          module: 'listing',
+          savedAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString()
+        }
+      ];
+      
+      localStorage.setItem('savedProperties_test-user-2', JSON.stringify(janeProperties));
+      
+      setSuccess('Test users added successfully! Refresh to see them.');
+      
+      // Refresh the data
+      setTimeout(() => {
+        fetchUserAnalytics();
+      }, 1000);
+      
+    } catch (error) {
+      setError('Failed to add test users: ' + error.message);
+    }
+  }
+
   // Event listeners
   refreshBtn.addEventListener('click', fetchUserAnalytics);
   exportBtn.addEventListener('click', exportCSV);
+  
+  // Add test users button
+  const addTestUsersBtn = document.getElementById('addTestUsersBtn');
+  if (addTestUsersBtn) {
+    addTestUsersBtn.addEventListener('click', addTestUsers);
+  }
   
   // Search and filter event listeners
   userSearch.addEventListener('input', filterData);

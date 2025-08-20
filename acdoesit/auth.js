@@ -578,6 +578,23 @@ function handleGoogleSignIn(response) {
 
       console.log('Google user data:', user);
 
+      // Save user to localStorage users array
+      const existingUsers = localStorage.getItem('users');
+      const users = existingUsers ? JSON.parse(existingUsers) : [];
+      
+      // Check if user already exists
+      const existingUserIndex = users.findIndex(u => u.email === user.email);
+      if (existingUserIndex >= 0) {
+        // Update existing user
+        users[existingUserIndex] = { ...users[existingUserIndex], ...user };
+      } else {
+        // Add new user
+        users.push(user);
+      }
+      
+      localStorage.setItem('users', JSON.stringify(users));
+      console.log('Google user saved to localStorage users array');
+
       // Sign in the user
       authSystem.signIn(user);
       authSystem.showMessage('Signed in with Google successfully!', 'success');

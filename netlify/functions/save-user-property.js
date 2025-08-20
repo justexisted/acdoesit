@@ -12,7 +12,7 @@ export async function handler(event, context) {
       return { statusCode: 400, body: 'Missing required data: userId and propertyData' };
     }
 
-    // Use the user's existing Supabase configuration
+    // Your Supabase configuration
     const url = "https://vkaejxrjvxxfkwidakxq.supabase.co";
     const key = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZrYWVqeHJqdnh4Zmt3aWRha3hxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU1MzEzNzUsImV4cCI6MjA3MTEwNzM3NX0.AWbLw3KEIZijsNbhCV2QO5IF8Ie5P90PfRohwXZjjBI";
     const table = 'user_properties';
@@ -26,13 +26,13 @@ export async function handler(event, context) {
     // Prepare property data for database
     const dbPropertyData = {
       user_id: userId,
-      property_name: propertyData.propertyName || propertyData.property_name || 'Unnamed Property',
-      address: propertyData.address || '',
-      neighborhood: propertyData.neighborhood || '',
-      property_type: propertyData.propertyType || propertyData.property_type || '',
-      target_audience: propertyData.targetAudience || propertyData.target_audience || '',
-      unique_features: propertyData.uniqueFeatures || propertyData.unique_features || '',
-      form_data: propertyData.formData || propertyData.form_data || {},
+      property_name: propertyData.propertyName || propertyData.Property_Address || 'Unnamed Property',
+      address: propertyData.address || propertyData.Property_Address || '',
+      neighborhood: propertyData.neighborhood || propertyData.Neighborhood || '',
+      property_type: propertyData.propertyType || propertyData.Property_Type || '',
+      target_audience: propertyData.targetAudience || propertyData.Target_Audience || '',
+      unique_features: propertyData.uniqueFeatures || propertyData.Unique_Features || '',
+      form_data: propertyData.formData || propertyData || {},
       created_at: new Date().toISOString()
     };
 
@@ -44,7 +44,8 @@ export async function handler(event, context) {
       headers: {
         'apikey': key,
         'Authorization': `Bearer ${key}`,
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        'Prefer': 'return=minimal'
       },
       body: JSON.stringify(dbPropertyData)
     });
@@ -58,9 +59,8 @@ export async function handler(event, context) {
       return { statusCode: 502, body: `Failed to save property: ${errorText}` };
     }
 
-    const responseBody = await resp.text();
-    console.log('Supabase response body:', responseBody);
-
+    console.log('Property saved successfully to database');
+    
     // Also track this as user activity
     try {
       await fetch('/.netlify/functions/track-user-activity', {
@@ -82,7 +82,6 @@ export async function handler(event, context) {
       console.log('Failed to track activity, but property was saved:', activityError);
     }
 
-    console.log('Property saved successfully to database');
     return { statusCode: 200, body: JSON.stringify({ success: true }) };
   } catch (error) {
     console.error('Error saving property:', error);
