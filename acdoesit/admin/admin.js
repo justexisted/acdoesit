@@ -1,11 +1,10 @@
 document.addEventListener('DOMContentLoaded', () => {
-  // Admin email (only this email can access admin)
+  // Only allow this specific email to access admin
   const ADMIN_EMAIL = 'justexisted@gmail.com';
   
   // DOM Elements
   const loginContainer = document.getElementById('loginContainer');
   const dashboardContainer = document.getElementById('dashboardContainer');
-  const loginForm = document.getElementById('loginForm');
   const loginError = document.getElementById('loginError');
   const logoutBtn = document.getElementById('logoutBtn');
   
@@ -93,15 +92,45 @@ document.addEventListener('DOMContentLoaded', () => {
     fetchUserAnalytics(); // Load data when dashboard is shown
   }
 
-  // Handle login
-  function handleLogin(email, password) {
-    if (email === ADMIN_EMAIL && password === 'admin123') {
-      localStorage.setItem('adminAuthToken', email);
-      isAuthenticated = true;
-      showDashboard();
-      hideLoginError();
-    } else {
-      showLoginError('Invalid email or password');
+  // Google OAuth Admin Sign-In Handler
+  window.handleAdminGoogleSignIn = function(response) {
+    try {
+      // Decode the JWT token from Google
+      const responsePayload = decodeJwtResponse(response.credential);
+      
+      console.log('Google Sign-In Response:', responsePayload);
+      
+      // Check if this is the admin email
+      if (responsePayload.email === ADMIN_EMAIL) {
+        // Store admin session
+        localStorage.setItem('adminAuthToken', responsePayload.email);
+        localStorage.setItem('adminName', responsePayload.name);
+        localStorage.setItem('adminPicture', responsePayload.picture);
+        
+        isAuthenticated = true;
+        showDashboard();
+        hideLoginError();
+      } else {
+        showLoginError(`Access denied. Only ${ADMIN_EMAIL} can access admin dashboard.`);
+      }
+    } catch (error) {
+      console.error('Google Sign-In Error:', error);
+      showLoginError('Google Sign-In failed. Please try again.');
+    }
+  };
+
+  // Decode JWT token from Google
+  function decodeJwtResponse(token) {
+    try {
+      const base64Url = token.split('.')[1];
+      const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+      const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
+        return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+      }).join(''));
+      return JSON.parse(jsonPayload);
+    } catch (error) {
+      console.error('JWT decode error:', error);
+      throw new Error('Invalid token format');
     }
   }
 
@@ -125,13 +154,6 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // Event listeners for authentication
-  loginForm.addEventListener('submit', (e) => {
-    e.preventDefault();
-    const email = document.getElementById('email').value;
-    const password = document.getElementById('password').value;
-    handleLogin(email, password);
-  });
-
   logoutBtn.addEventListener('click', handleLogout);
 
   // Utility functions
