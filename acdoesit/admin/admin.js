@@ -1,5 +1,15 @@
 document.addEventListener('DOMContentLoaded', () => {
+  // Admin credentials (in production, this should be stored securely)
+  const ADMIN_EMAIL = 'justexisted@gmail.com';
+  const ADMIN_PASSWORD = 'admin123'; // You can change this password
+  
   // DOM Elements
+  const loginContainer = document.getElementById('loginContainer');
+  const dashboardContainer = document.getElementById('dashboardContainer');
+  const loginForm = document.getElementById('loginForm');
+  const loginError = document.getElementById('loginError');
+  const logoutBtn = document.getElementById('logoutBtn');
+  
   const errorEl = document.getElementById('error');
   const successEl = document.getElementById('success');
   const loadingEl = document.getElementById('loading');
@@ -24,6 +34,74 @@ document.addEventListener('DOMContentLoaded', () => {
   let currentData = [];
   let currentTab = 'users';
   let filteredData = [];
+  let isAuthenticated = false;
+
+  // Check if user is already authenticated
+  function checkAuthStatus() {
+    const authToken = localStorage.getItem('adminAuthToken');
+    if (authToken && authToken === ADMIN_EMAIL) {
+      isAuthenticated = true;
+      showDashboard();
+    } else {
+      showLogin();
+    }
+  }
+
+  // Show login form
+  function showLogin() {
+    loginContainer.style.display = 'flex';
+    dashboardContainer.style.display = 'none';
+    isAuthenticated = false;
+  }
+
+  // Show dashboard
+  function showDashboard() {
+    loginContainer.style.display = 'none';
+    dashboardContainer.style.display = 'block';
+    isAuthenticated = true;
+    fetchUserAnalytics(); // Load data when dashboard is shown
+  }
+
+  // Handle login
+  function handleLogin(email, password) {
+    if (email === ADMIN_EMAIL && password === ADMIN_PASSWORD) {
+      localStorage.setItem('adminAuthToken', email);
+      isAuthenticated = true;
+      showDashboard();
+      hideLoginError();
+    } else {
+      showLoginError('Invalid email or password');
+    }
+  }
+
+  // Handle logout
+  function handleLogout() {
+    localStorage.removeItem('adminAuthToken');
+    isAuthenticated = false;
+    showLogin();
+    hideLoginError();
+  }
+
+  // Show login error
+  function showLoginError(message) {
+    loginError.textContent = message;
+    loginError.style.display = 'block';
+  }
+
+  // Hide login error
+  function hideLoginError() {
+    loginError.style.display = 'none';
+  }
+
+  // Event listeners for authentication
+  loginForm.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const email = document.getElementById('email').value;
+    const password = document.getElementById('password').value;
+    handleLogin(email, password);
+  });
+
+  logoutBtn.addEventListener('click', handleLogout);
 
   // Utility functions
   const setError = (msg) => {
@@ -43,7 +121,6 @@ document.addEventListener('DOMContentLoaded', () => {
       return; 
     }
     successEl.textContent = msg;
-    successEl.classList.remove('hidden');
     setTimeout(() => setSuccess(''), 5000);
   };
 
@@ -446,6 +523,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Fetch user analytics from database
   async function fetchUserAnalytics() {
+    if (!isAuthenticated) {
+      console.log('User not authenticated, cannot fetch data');
+      return;
+    }
+
     try {
       showLoading(true);
       setError('');
@@ -686,6 +768,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   };
 
-  // Initialize the dashboard
-  fetchUserAnalytics();
+  // Initialize authentication check
+  checkAuthStatus();
 });
