@@ -27,11 +27,16 @@
       
       /* Custom checkbox styling for better appearance */
       .checkbox-label{display:flex;align-items:center;gap:8px;margin-bottom:8px;cursor:pointer}
-      .checkbox-label input[type="checkbox"]{appearance:none;width:20px;height:20px;border:2px solid #d1d5db;border-radius:4px;display:inline-grid;place-items:center;background:#fff;cursor:pointer;transition:all 0.2s ease}
+      .checkbox-label input[type="checkbox"]{appearance:none;width:20px;height:20px;border:2px solid #d1d5db;border-radius:4px;display:flex;align-items:center;justify-content:center;background:#fff;cursor:pointer;transition:all 0.2s ease;position:relative}
       .checkbox-label input[type="checkbox"]:checked{background:#064591;border-color:#064591}
-      .checkbox-label input[type="checkbox"]:checked::after{content:"✓";color:#fff;font-size:14px;font-weight:bold;line-height:1}
+      .checkbox-label input[type="checkbox"]:checked::after{content:"✓";color:#fff;font-size:16px;font-weight:bold;position:absolute;top:50%;left:50%;transform:translate(-50%, -50%);line-height:1}
       .checkbox-label input[type="checkbox"]:hover{border-color:#064591}
       .checkbox-text{font-size:0.9rem;user-select:none}
+      
+      /* Combobox styling */
+      .combobox-container{position:relative}
+      .combobox-container input{width:100%;padding:8px 12px;border:1px solid #e5e7eb;border-radius:6px;font-size:0.9rem}
+      .combobox-container input:focus{outline:none;border-color:#064591;box-shadow:0 0 0 3px rgba(6, 69, 145, 0.1)}
       .actions{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:24px}
       .preview{background:#f8fafc;border:1px solid #e5e7eb;border-radius:8px;padding:16px;white-space:pre-wrap;font-family:monospace;font-size:0.9rem;line-height:1.5;max-height:400px;overflow-y:auto}
       .error{color:var(--bad);font-size:0.8rem;margin-top:4px}

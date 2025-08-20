@@ -4,7 +4,7 @@ document.addEventListener("DOMContentLoaded", () => {
     listing: {
       fields: [
         { key: "Property_Address", type: "text", label: "Property Address", required: true, placeholder: "123 Example St" },
-        { key: "Neighborhood", type: "text", label: "Neighborhood", required: true, placeholder: "e.g., North Park, La Jolla, Gaslamp, Point Loma, Pacific Beach, Hillcrest, Little Italy, South Park, Mission Hills, Ocean Beach, University City, Carmel Valley, Rancho Bernardo, Clairemont, Encinitas, Del Mar, Chula Vista" },
+        { key: "Neighborhood", type: "combobox", label: "Neighborhood", required: true, options: ["North Park", "La Jolla", "Gaslamp", "Point Loma", "Pacific Beach", "Hillcrest", "Little Italy", "South Park", "Mission Hills", "Ocean Beach", "University City", "Carmel Valley", "Rancho Bernardo", "Clairemont", "Encinitas", "Del Mar", "Chula Vista"], placeholder: "Type or select a neighborhood" },
         { key: "Property_Type", type: "select", label: "Property Type", required: true, options: ["Condo", "Single-Family Home", "Townhouse", "Multi-Unit", "Luxury Estate"] },
         { key: "Architectural_Style", type: "select", label: "Architectural Style", required: true, options: ["Craftsman", "Spanish Revival", "Mid-Century Modern", "Contemporary", "Mediterranean", "Bungalow", "Ranch", "Modern Coastal"] },
         { key: "Beds", type: "number", label: "Beds", required: true, min: 0, step: 1 },
@@ -12,7 +12,7 @@ document.addEventListener("DOMContentLoaded", () => {
         { key: "Square_Footage", type: "number", label: "Square Footage", required: true, min: 100, step: 1, suffix: "sq ft" },
         { key: "Key_Features", type: "textarea", label: "Key Features (bullets)", required: true, placeholder: "• Renovated kitchen\n• Ocean views\n• Private backyard" },
         { key: "Nearby_Amenities", type: "checkboxes", label: "Nearby Amenities", options: ["Walkable to cafes", "Near Balboa Park", "Top-rated schools", "Easy freeway access", "Close to trolley", "Beach access", "Farmers market nearby"] },
-        { key: "Target_Audience", type: "select", label: "Target Audience", required: true, options: ["First-time homebuyers", "Young professionals", "Growing families", "Retirees", "Investors"] },
+        { key: "Target_Audience", type: "combobox", label: "Target Audience", required: true, options: ["First-time homebuyers", "Young professionals", "Growing families", "Retirees", "Investors"], placeholder: "Type or select target audience" },
         { key: "Tone", type: "select", label: "Tone", required: true, options: ["Luxurious & Elegant", "Modern & Trendy", "Cozy & Charming", "Professional & Direct"] }
       ],
       template: "Act as an expert San Diego real estate copywriter. Write a compelling property listing description for a [Property_Type] located in the [Neighborhood] neighborhood of San Diego. The property has a [Architectural_Style] design.\n\nProperty Details:\nAddress: [Property_Address]\nSpecs: [Beds] bedrooms, [Baths] bathrooms, [Square_Footage] sq. ft.\nKey Features:\n[Key_Features]\n\nNeighborhood Vibe: Highlight that it is [Nearby_Amenities].\n\nInstructions:\n• Craft a captivating headline.\n• Write a main body (2-3 paragraphs) that tells a story about living in the home, weaving in the key features and the benefits of the [Neighborhood] location.\n• The tone of the description must be [Tone].\n• The description should appeal directly to [Target_Audience].\n• End with a strong call to action to schedule a showing.\n• Ensure the description is optimized for SEO using keywords like \"San Diego real estate,\" \"homes for sale in [Neighborhood],\" and \"[Beds] bedroom home in San Diego.\""
@@ -41,7 +41,7 @@ document.addEventListener("DOMContentLoaded", () => {
     },
     staging: {
       fields: [
-        { key: "Neighborhood", type: "text", label: "Neighborhood", required: true, placeholder: "e.g., North Park, La Jolla, Gaslamp, Point Loma, Pacific Beach, Hillcrest, Little Italy, South Park, Mission Hills, Ocean Beach, University City, Carmel Valley, Rancho Bernardo, Clairemont, Encinitas, Del Mar, Chula Vista" },
+        { key: "Neighborhood", type: "combobox", label: "Neighborhood", required: true, options: ["North Park", "La Jolla", "Gaslamp", "Point Loma", "Pacific Beach", "Hillcrest", "Little Italy", "South Park", "Mission Hills", "Ocean Beach", "University City", "Carmel Valley", "Rancho Bernardo", "Clairemont", "Encinitas", "Del Mar", "Chula Vista"], placeholder: "Type or select a neighborhood" },
         { key: "Architectural_Style", type: "select", label: "Architectural Style", required: true, options: ["Craftsman", "Spanish Revival", "Mid-Century Modern", "Contemporary", "Mediterranean", "Bungalow", "Ranch", "Modern Coastal"] },
         { key: "Property_Condition", type: "select", label: "Property Condition", required: true, options: ["Vacant", "Occupied - needs decluttering", "Outdated finishes"] },
         { key: "Target_Buyer_Profile", type: "text", label: "Target Buyer Profile", required: true, placeholder: "e.g., Young tech professionals" },
@@ -120,6 +120,10 @@ document.addEventListener("DOMContentLoaded", () => {
         return `<label class="field ${requiredClass}"><span>${field.label}</span><select id="${id}" ${field.required ? "required" : ""}><option value="">Select ${field.label}</option>${(field.options || []).map(opt => `<option value="${opt}">${opt}</option>`).join("")}</select></label>`;
       }
       
+      if (field.type === "combobox") {
+        return `<label class="field ${requiredClass}"><span>${field.label}</span><div class="combobox-container"><input type="text" id="${id}" list="${id}-list" placeholder="${field.placeholder || ''}" ${field.required ? "required" : ""}><datalist id="${id}-list">${(field.options || []).map(opt => `<option value="${opt}">`).join("")}</datalist></div></label>`;
+      }
+      
       if (field.type === "checkboxes") {
         return `<fieldset class="field checkboxes ${requiredClass}"><legend>${field.label}</legend>${(field.options || []).map(opt => `<label class="checkbox-label"><input type="checkbox" name="${id}" value="${opt}"> <span class="checkbox-text">${opt}</span></label>`).join("")}</fieldset>`;
       }
@@ -171,6 +175,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function generatePrompt() {
     const values = getValues();
+    console.log("Form values:", values); // Debug: see what values are captured
+    console.log("Nearby_Amenities value:", values.Nearby_Amenities); // Debug: specifically check amenities
     const compiledPrompt = compile(Modules[activeModule].template, values);
     previewEl.textContent = compiledPrompt;
     previewContainer.style.display = "block";
