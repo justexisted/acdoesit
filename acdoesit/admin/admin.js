@@ -425,23 +425,41 @@ document.addEventListener('DOMContentLoaded', () => {
       showLoading(true);
       setError('');
       
+      console.log('Admin dashboard: Starting to fetch user analytics...');
+      
       const response = await fetch('/.netlify/functions/get-user-analytics');
       
+      console.log('Admin dashboard: Response received:', {
+        status: response.status,
+        statusText: response.statusText,
+        ok: response.ok,
+        headers: Object.fromEntries(response.headers.entries())
+      });
+      
       if (!response.ok) {
-        throw new Error(`Failed to fetch data: ${response.status} ${response.statusText}`);
+        const errorText = await response.text();
+        console.error('Admin dashboard: Response not OK:', errorText);
+        throw new Error(`Failed to fetch data: ${response.status} ${response.statusText} - ${errorText}`);
       }
       
       const data = await response.json();
       
+      console.log('Admin dashboard: Data received:', {
+        type: typeof data,
+        isArray: Array.isArray(data),
+        length: Array.isArray(data) ? data.length : 'not an array',
+        data: data
+      });
+      
       if (!Array.isArray(data)) {
-        throw new Error('Invalid data format received');
+        throw new Error(`Invalid data format received: expected array, got ${typeof data}`);
       }
       
-      console.log(`Fetched ${data.length} users from analytics function`);
+      console.log(`Admin dashboard: Successfully fetched ${data.length} users from analytics function`);
       render(data || []);
       
     } catch (error) {
-      console.error('Error fetching user analytics:', error);
+      console.error('Admin dashboard: Error fetching user analytics:', error);
       setError(`Failed to load user data: ${error.message}`);
       
       // Show empty state

@@ -5,8 +5,17 @@ export async function handler(event, context) {
   // }
 
   try {
+    console.log('get-user-analytics function called');
+    
     const url = process.env.SUPABASE_URL;
     const key = process.env.SUPABASE_SERVICE_ROLE;
+    
+    console.log('Supabase config check:', {
+      hasUrl: !!url,
+      hasKey: !!key,
+      url: url ? 'configured' : 'missing',
+      key: key ? 'configured' : 'missing'
+    });
     
     if (!url || !key) {
       console.log('Supabase credentials not configured, returning test data');
@@ -85,6 +94,7 @@ export async function handler(event, context) {
     // First, try to get users from the users table
     let users = [];
     try {
+      console.log('Attempting to fetch users from Supabase...');
       const usersQuery = new URLSearchParams({ 
         select: '*', 
         order: 'created_at.desc', 
@@ -95,24 +105,25 @@ export async function handler(event, context) {
         headers: { apikey: key, Authorization: `Bearer ${key}` }
       });
       
+      console.log('Users response status:', usersResp.status);
+      
       if (usersResp.ok) {
         users = await usersResp.json();
-        console.log(`Found ${users.length} users in database`);
+        console.log(`Found ${users.length} users in Supabase database`);
       } else {
-        console.log('Users table not found or empty, will create from localStorage data');
+        const errorText = await usersResp.text();
+        console.log('Users table not found or empty:', errorText);
       }
     } catch (error) {
       console.log('Error fetching users from database:', error.message);
     }
 
-    // If no users in database, create a basic structure from localStorage data
+    // If no users in database, return empty array for now
     if (!users || users.length === 0) {
-      // Return empty analytics for now - users will be populated as they sign up
-      const emptyAnalytics = [];
-      
+      console.log('No users found in database, returning empty array');
       return { 
         statusCode: 200, 
-        body: JSON.stringify(emptyAnalytics), 
+        body: JSON.stringify([]), 
         headers: { 'Content-Type': 'application/json' } 
       };
     }
@@ -120,6 +131,7 @@ export async function handler(event, context) {
     // Get user activity data
     let activities = [];
     try {
+      console.log('Attempting to fetch user activity from Supabase...');
       const activityQuery = new URLSearchParams({ 
         select: '*', 
         order: 'timestamp.desc', 
@@ -130,9 +142,14 @@ export async function handler(event, context) {
         headers: { apikey: key, Authorization: `Bearer ${key}` }
       });
       
+      console.log('Activity response status:', activityResp.status);
+      
       if (activityResp.ok) {
         activities = await activityResp.json();
         console.log(`Found ${activities.length} activities in database`);
+      } else {
+        const errorText = await activityResp.text();
+        console.log('Activity table not found or empty:', errorText);
       }
     } catch (error) {
       console.log('Error fetching user activity:', error.message);
