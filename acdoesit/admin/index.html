@@ -1,139 +1,435 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Admin — User Analytics</title>
-    <link rel="stylesheet" href="../styles.css">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - AC Does It</title>
     <style>
-      .admin-wrap{min-height:100vh;display:flex;align-items:flex-start;padding-top:40px}
-      .toolbar{display:flex;gap:8px;align-items:center;margin-bottom:12px;flex-wrap:wrap}
-      table{width:100%;border-collapse:collapse;font-size:14px}
-      th,td{border:1px solid #e5e7eb;padding:8px 10px;text-align:left;vertical-align:top}
-      th{background:#f8fafc;font-weight:600}
-      .muted{color:#555}
-      .hidden{display:none}
-      .stats-grid{display:grid;grid-template-columns:repeat(auto-fit, minmax(200px, 1fr));gap:16px;margin-bottom:24px}
-      .stat-card{background:#f8fafc;border:1px solid #e5e7eb;border-radius:8px;padding:16px;text-align:center}
-      .stat-number{font-size:24px;font-weight:700;color:var(--accent)}
-      .stat-label{color:#666;font-size:14px;margin-top:4px}
-      .feature-usage{font-size:12px;color:#666}
-      .location-info{font-size:12px;color:#666}
-      .engagement-high{color:#28a745;font-weight:600}
-      .engagement-medium{color:#ffc107;font-weight:600}
-      .engagement-low{color:#dc3545;font-weight:600}
-      .tab-buttons{display:flex;gap:8px;margin-bottom:16px}
-      .tab-btn{background:#f8fafc;border:1px solid #e5e7eb;padding:8px 16px;border-radius:6px;cursor:pointer}
-      .tab-btn.active{background:var(--accent);color:white;border-color:var(--accent)}
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f5f5;
+            color: #333;
+            line-height: 1.6;
+        }
+        
+        .header {
+            background: #064591;
+            color: white;
+            padding: 1rem 2rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .header h1 {
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        
+        .stat-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            border-left: 4px solid #064591;
+        }
+        
+        .stat-card h3 {
+            color: #666;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 0.5rem;
+        }
+        
+        .stat-card .value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #064591;
+        }
+        
+        .tabs {
+            display: flex;
+            background: white;
+            border-radius: 8px 8px 0 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 0;
+        }
+        
+        .tab-btn {
+            padding: 1rem 2rem;
+            border: none;
+            background: none;
+            cursor: pointer;
+            font-size: 1rem;
+            color: #666;
+            border-bottom: 3px solid transparent;
+            transition: all 0.2s;
+        }
+        
+        .tab-btn.active {
+            color: #064591;
+            border-bottom-color: #064591;
+            background: #f8f9fa;
+        }
+        
+        .tab-btn:hover {
+            background: #f8f9fa;
+        }
+        
+        .tab-content {
+            background: white;
+            border-radius: 0 0 8px 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+        
+        .table-wrap {
+            overflow-x: auto;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+        }
+        
+        th, td {
+            padding: 0.75rem;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+        
+        th {
+            background: #f8f9fa;
+            font-weight: 600;
+            color: #333;
+            position: sticky;
+            top: 0;
+        }
+        
+        tr:hover {
+            background: #f8f9fa;
+        }
+        
+        .btn {
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            text-decoration: none;
+            display: inline-block;
+            margin: 0.25rem;
+        }
+        
+        .btn-primary {
+            background: #064591;
+            color: white;
+        }
+        
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+        
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+        
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 2rem;
+            color: #666;
+        }
+        
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 1rem;
+            border-radius: 4px;
+            margin-bottom: 1rem;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .success {
+            background: #d4edda;
+            color: #155724;
+            padding: 1rem;
+            border-radius: 4px;
+            margin-bottom: 1rem;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .engagement-high { color: #28a745; font-weight: 600; }
+        .engagement-medium { color: #ffc107; font-weight: 600; }
+        .engagement-low { color: #dc3545; font-weight: 600; }
+        
+        .feature-usage {
+            max-width: 200px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        
+        .user-actions {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+        
+        .search-box {
+            margin-bottom: 1rem;
+        }
+        
+        .search-box input {
+            padding: 0.5rem;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            width: 300px;
+            font-size: 0.9rem;
+        }
+        
+        .filters {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1rem;
+            align-items: center;
+        }
+        
+        .filter-select {
+            padding: 0.5rem;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 0.9rem;
+        }
+        
+        .refresh-info {
+            color: #666;
+            font-size: 0.9rem;
+            margin-bottom: 1rem;
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+            
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .tabs {
+                flex-direction: column;
+            }
+            
+            .tab-btn {
+                border-bottom: none;
+                border-right: 3px solid transparent;
+            }
+            
+            .tab-btn.active {
+                border-right-color: #064591;
+                border-bottom-color: transparent;
+            }
+        }
     </style>
-  </head>
-  <body>
-    <main class="section admin-wrap">
-      <div class="container" style="width:min(1200px,100% - 24px)">
-        <div class="nav-row">
-          <a class="btn" href="../index.html">← Back</a>
-          <span></span>
-        </div>
-        <h1 style="font-size:clamp(1.4rem,4vw,2rem);margin-bottom:10px">User Analytics Dashboard</h1>
-
-        <div id="auth" class="toolbar">
-          <button id="loginBtn" class="btn btn-accent">Log in</button>
-          <button id="logoutBtn" class="btn hidden">Log out</button>
-          <span id="who" class="muted"></span>
-        </div>
-
-        <div id="controls" class="toolbar hidden">
-          <button id="refreshBtn" class="btn btn-accent">Refresh</button>
-          <button id="exportBtn" class="btn">Export CSV</button>
-          <span id="count" class="muted"></span>
-        </div>
-
-        <div id="error" class="muted hidden"></div>
-
+</head>
+<body>
+    <div class="header">
+        <h1>🔐 Admin Dashboard - AC Does It</h1>
+    </div>
+    
+    <div class="container">
+        <!-- Error/Success Messages -->
+        <div id="error" class="error hidden"></div>
+        <div id="success" class="success hidden"></div>
+        
         <!-- Statistics Overview -->
-        <div id="statsOverview" class="stats-grid hidden">
-          <div class="stat-card">
-            <div class="stat-number" id="totalUsers">-</div>
-            <div class="stat-label">Total Users</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-number" id="activeUsers">-</div>
-            <div class="stat-label">Active Users (30 days)</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-number" id="avgEngagement">-</div>
-            <div class="stat-label">Avg Engagement Score</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-number" id="totalActions">-</div>
-            <div class="stat-label">Total Actions</div>
-          </div>
+        <div id="statsOverview" class="hidden">
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <h3>Total Users</h3>
+                    <div class="value" id="totalUsers">0</div>
+                </div>
+                <div class="stat-card">
+                    <h3>Active Users (30 days)</h3>
+                    <div class="value" id="activeUsers">0</div>
+                </div>
+                <div class="stat-card">
+                    <h3>New Users (7 days)</h3>
+                    <div class="value" id="newUsers">0</div>
+                </div>
+                <div class="stat-card">
+                    <h3>Total Actions</h3>
+                    <div class="value" id="totalActions">0</div>
+                </div>
+                <div class="stat-card">
+                    <h3>Avg Engagement Score</h3>
+                    <div class="value" id="avgEngagement">0</div>
+                </div>
+                <div class="stat-card">
+                    <h3>Google Sign-ups</h3>
+                    <div class="value" id="googleUsers">0</div>
+                </div>
+            </div>
         </div>
-
+        
         <!-- Tab Navigation -->
-        <div id="tabNavigation" class="tab-buttons hidden">
-          <button class="tab-btn active" data-tab="users">Users</button>
-          <button class="tab-btn" data-tab="engagement">Engagement</button>
-          <button class="tab-btn" data-tab="features">Feature Usage</button>
+        <div id="tabNavigation" class="hidden">
+            <div class="tabs">
+                <button class="tab-btn active" data-tab="users">👥 Users</button>
+                <button class="tab-btn" data-tab="activity">📊 Activity</button>
+                <button class="tab-btn" data-tab="features">🚀 Features</button>
+                <button class="tab-btn" data-tab="bookings">📅 Bookings</button>
+            </div>
+            
+            <!-- Users Tab -->
+            <div id="usersTab" class="tab-content">
+                <div class="search-box">
+                    <input type="text" id="userSearch" placeholder="Search users by name or email...">
+                </div>
+                <div class="filters">
+                    <select id="providerFilter" class="filter-select">
+                        <option value="">All Providers</option>
+                        <option value="email">Email</option>
+                        <option value="google">Google</option>
+                    </select>
+                    <select id="engagementFilter" class="filter-select">
+                        <option value="">All Engagement Levels</option>
+                        <option value="high">High (70+)</option>
+                        <option value="medium">Medium (30-69)</option>
+                        <option value="low">Low (0-29)</option>
+                    </select>
+                </div>
+                <div class="table-wrap">
+                    <table id="usersTable">
+                        <thead>
+                            <tr>
+                                <th>Created</th>
+                                <th>Name</th>
+                                <th>Email</th>
+                                <th>Provider</th>
+                                <th>Location</th>
+                                <th>Engagement</th>
+                                <th>Actions</th>
+                                <th>Last Activity</th>
+                                <th>Features Used</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Users will be populated here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <!-- Activity Tab -->
+            <div id="activityTab" class="tab-content hidden">
+                <div class="table-wrap">
+                    <table id="activityTable">
+                        <thead>
+                            <tr>
+                                <th>User</th>
+                                <th>Action</th>
+                                <th>Details</th>
+                                <th>Location</th>
+                                <th>Timestamp</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Activity will be populated here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <!-- Features Tab -->
+            <div id="featuresTab" class="tab-content hidden">
+                <div class="table-wrap">
+                    <table id="featuresTable">
+                        <thead>
+                            <tr>
+                                <th>Feature</th>
+                                <th>Total Usage</th>
+                                <th>Unique Users</th>
+                                <th>Avg Usage/User</th>
+                                <th>Most Active User</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Features will be populated here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <!-- Bookings Tab -->
+            <div id="bookingsTab" class="tab-content hidden">
+                <div class="table-wrap">
+                    <table id="bookingsTable">
+                        <thead>
+                            <tr>
+                                <th>User</th>
+                                <th>Email</th>
+                                <th>Request Date</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Bookings will be populated here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         </div>
-
-        <!-- Users Table -->
-        <div id="usersTab" class="table-wrap">
-          <table id="usersTable" class="hidden">
-            <thead>
-              <tr>
-                <th>Created</th>
-                <th>Name</th>
-                <th>Email</th>
-                <th>Provider</th>
-                <th>Location</th>
-                <th>Engagement Score</th>
-                <th>Total Actions</th>
-                <th>Last Activity</th>
-                <th>Feature Usage</th>
-              </tr>
-            </thead>
-            <tbody></tbody>
-          </table>
+        
+        <!-- Controls -->
+        <div id="controls" class="hidden">
+            <div class="refresh-info">
+                Last updated: <span id="lastUpdated">Never</span>
+                <button id="refreshBtn" class="btn btn-primary">🔄 Refresh Data</button>
+                <button id="exportBtn" class="btn btn-secondary">📊 Export CSV</button>
+            </div>
         </div>
-
-        <!-- Engagement Table -->
-        <div id="engagementTab" class="table-wrap hidden">
-          <table id="engagementTable" class="hidden">
-            <thead>
-              <tr>
-                <th>User</th>
-                <th>Email</th>
-                <th>Engagement Score</th>
-                <th>Actions This Week</th>
-                <th>Actions This Month</th>
-                <th>Most Used Feature</th>
-                <th>Last Seen</th>
-              </tr>
-            </thead>
-            <tbody></tbody>
-          </table>
+        
+        <!-- Loading State -->
+        <div id="loading" class="loading">
+            <p>Loading admin data...</p>
         </div>
-
-        <!-- Feature Usage Table -->
-        <div id="featuresTab" class="table-wrap hidden">
-          <table id="featuresTable" class="hidden">
-            <thead>
-              <tr>
-                <th>Feature</th>
-                <th>Total Usage</th>
-                <th>Unique Users</th>
-                <th>Avg Usage per User</th>
-                <th>Most Active User</th>
-              </tr>
-            </thead>
-            <tbody></tbody>
-          </table>
-        </div>
-      </div>
-    </main>
+    </div>
 
     <script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
-    <script src="./admin.js" defer></script>
-  </body>
+    <script src="admin.js"></script>
+</body>
 </html>
