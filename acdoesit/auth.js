@@ -41,23 +41,71 @@ class AuthSystem {
   }
 
   setupGoogleAuth() {
-    // Google Sign-In will be initialized when the page loads
-    // The callback functions are defined below
+    // Wait for Google Sign-In API to load
+    if (typeof google !== 'undefined' && google.accounts) {
+      this.initializeGoogleAuth();
+    } else {
+      // If Google API hasn't loaded yet, wait for it
+      window.addEventListener('load', () => {
+        if (typeof google !== 'undefined' && google.accounts) {
+          this.initializeGoogleAuth();
+        }
+      });
+    }
+  }
+
+  initializeGoogleAuth() {
+    try {
+      // Initialize Google Sign-In for sign in modal
+      if (document.getElementById('g_id_onload')) {
+        google.accounts.id.initialize({
+          client_id: '6812355521-ruaqh0ccemnpnu325ihblctbvnjj0ijf.apps.googleusercontent.com',
+          callback: handleGoogleSignIn
+        });
+        google.accounts.id.renderButton(
+          document.getElementById('g_id_signin'),
+          { theme: 'outline', size: 'large', text: 'sign_in_with' }
+        );
+      }
+
+      // Initialize Google Sign-In for sign up modal
+      if (document.getElementById('g_id_onload_signup')) {
+        google.accounts.id.initialize({
+          client_id: '6812355521-ruaqh0ccemnpnu325ihblctbvnjj0ijf.apps.googleusercontent.com',
+          callback: handleGoogleSignUp
+        });
+        google.accounts.id.renderButton(
+          document.getElementById('g_id_signin_signup'),
+          { theme: 'outline', size: 'large', text: 'signup_with' }
+        );
+      }
+    } catch (error) {
+      console.error('Error initializing Google Auth:', error);
+    }
   }
 
   async handleSignUp(e) {
     e.preventDefault();
-    const formData = new FormData(e.target);
-    const userData = {
-      firstName: formData.get('firstName') || document.getElementById('signUpFirstName').value,
-      lastName: formData.get('lastName') || document.getElementById('signUpLastName').value,
-      email: formData.get('email') || document.getElementById('signUpEmail').value,
-      password: formData.get('password') || document.getElementById('signUpPassword').value
-    };
-
+    
     try {
-      // Here you would typically send this to your backend
-      // For now, we'll simulate a successful signup
+      // Get form data directly from the form elements
+      const firstName = document.getElementById('signUpFirstName').value.trim();
+      const lastName = document.getElementById('signUpLastName').value.trim();
+      const email = document.getElementById('signUpEmail').value.trim();
+      const password = document.getElementById('signUpPassword').value;
+
+      // Validate data
+      if (!firstName || !lastName || !email || !password) {
+        throw new Error('All fields are required');
+      }
+      
+      if (password.length < 6) {
+        throw new Error('Password must be at least 6 characters');
+      }
+
+      const userData = { firstName, lastName, email, password };
+
+      // Simulate successful signup
       await this.simulateSignUp(userData);
       this.showMessage('Account created successfully!', 'success');
       this.closeAllModals();
@@ -69,15 +117,19 @@ class AuthSystem {
 
   async handleSignIn(e) {
     e.preventDefault();
-    const formData = new FormData(e.target);
-    const credentials = {
-      email: formData.get('email') || document.getElementById('signInEmail').value,
-      password: formData.get('password') || document.getElementById('signInPassword').value
-    };
-
+    
     try {
-      // Here you would typically send this to your backend
-      // For now, we'll simulate a successful signin
+      // Get form data directly from the form elements
+      const email = document.getElementById('signInEmail').value.trim();
+      const password = document.getElementById('signInPassword').value;
+
+      if (!email || !password) {
+        throw new Error('Email and password are required');
+      }
+
+      const credentials = { email, password };
+
+      // Simulate successful signin
       await this.simulateSignIn(credentials);
       this.showMessage('Signed in successfully!', 'success');
       this.closeAllModals();
@@ -108,9 +160,13 @@ class AuthSystem {
       createdAt: new Date().toISOString()
     };
 
-    localStorage.setItem('users', JSON.stringify([
-      ...(JSON.parse(localStorage.getItem('users') || '[]'), user)
-    ]));
+    // Get existing users or create empty array
+    const existingUsers = localStorage.getItem('users');
+    const users = existingUsers ? JSON.parse(existingUsers) : [];
+    
+    // Add new user
+    users.push(user);
+    localStorage.setItem('users', JSON.stringify(users));
   }
 
   async simulateSignIn(credentials) {
@@ -118,7 +174,12 @@ class AuthSystem {
     await new Promise(resolve => setTimeout(resolve, 1000));
     
     // Check if user exists
-    const users = JSON.parse(localStorage.getItem('users') || '[]');
+    const existingUsers = localStorage.getItem('users');
+    if (!existingUsers) {
+      throw new Error('User not found. Please sign up first.');
+    }
+
+    const users = JSON.parse(existingUsers);
     const user = users.find(u => u.email === credentials.email);
     
     if (!user) {
@@ -126,8 +187,9 @@ class AuthSystem {
     }
 
     // In a real app, you'd verify the password hash
+    // For demo purposes, we'll use a simple check
     if (credentials.password !== 'password123') { // Demo password
-      throw new Error('Invalid password');
+      throw new Error('Invalid password. Use "password123" for demo.');
     }
 
     this.signIn(user);
@@ -219,6 +281,10 @@ class AuthSystem {
           from { transform: translateX(100%); opacity: 0; }
           to { transform: translateX(0); opacity: 1; }
         }
+        @keyframes slideOut {
+          from { transform: translateX(0); opacity: 1; }
+          to { transform: translateX(100%); opacity: 0; }
+        }
       `;
       document.head.appendChild(style);
     }
@@ -248,22 +314,27 @@ class AuthSystem {
 function handleGoogleSignIn(response) {
   // Handle Google Sign-In response
   if (response.credential) {
-    // Decode the JWT token to get user info
-    const payload = JSON.parse(atob(response.credential.split('.')[1]));
-    
-    const user = {
-      id: payload.sub,
-      firstName: payload.given_name,
-      lastName: payload.family_name,
-      email: payload.email,
-      picture: payload.picture,
-      createdAt: new Date().toISOString(),
-      provider: 'google'
-    };
+    try {
+      // Decode the JWT token to get user info
+      const payload = JSON.parse(atob(response.credential.split('.')[1]));
+      
+      const user = {
+        id: payload.sub,
+        firstName: payload.given_name,
+        lastName: payload.family_name,
+        email: payload.email,
+        picture: payload.picture,
+        createdAt: new Date().toISOString(),
+        provider: 'google'
+      };
 
-    // Sign in the user
-    authSystem.signIn(user);
-    authSystem.showMessage('Signed in with Google successfully!', 'success');
+      // Sign in the user
+      authSystem.signIn(user);
+      authSystem.showMessage('Signed in with Google successfully!', 'success');
+    } catch (error) {
+      console.error('Error processing Google sign-in:', error);
+      authSystem.showMessage('Error signing in with Google. Please try again.', 'error');
+    }
   }
 }
 

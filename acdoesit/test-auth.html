@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Authentication Test - AC Does It</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+</head>
+<body>
+    <div class="auth-header">
+        <div class="container">
+            <div class="auth-content">
+                <div class="auth-left">
+                    <span class="auth-logo">AC Does It</span>
+                </div>
+                <div class="auth-right">
+                    <div id="auth-buttons" class="auth-buttons">
+                        <button class="auth-btn auth-btn-signin" onclick="openSignInModal()">Sign in</button>
+                        <button class="auth-btn auth-btn-signup" onclick="openSignUpModal()">Sign up</button>
+                    </div>
+                    <div id="user-status" class="user-status" style="display: none;">
+                        <span class="user-greeting">Hello, <span id="user-first-name"></span></span>
+                        <button class="auth-btn auth-btn-signout" onclick="signOut()">Sign out</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container" style="margin-top: 120px; padding: 40px;">
+        <h1>Authentication Test Page</h1>
+        <p>This page is for testing the authentication system. You should see:</p>
+        <ul>
+            <li>Sign in/Sign up buttons in the top right corner</li>
+            <li>Google authentication buttons in the modals</li>
+            <li>User status display when signed in</li>
+        </ul>
+        
+        <div style="margin-top: 40px;">
+            <h2>Test Instructions:</h2>
+            <ol>
+                <li>Click "Sign up" to create a new account</li>
+                <li>Use any email and password (demo password: password123)</li>
+                <li>Try signing in with the same credentials</li>
+                <li>Test Google authentication (if configured)</li>
+                <li>Check that the user greeting appears</li>
+            </ol>
+        </div>
+    </div>
+
+    <!-- Authentication Modals -->
+    <div id="signInModal" class="auth-modal" style="display: none;">
+        <div class="auth-modal-content">
+            <div class="auth-modal-header">
+                <h2>Sign In</h2>
+                <button class="auth-modal-close" onclick="closeSignInModal()">&times;</button>
+            </div>
+            <div class="auth-modal-body">
+                <form id="signInForm" class="auth-form">
+                    <div class="form-group">
+                        <label for="signInEmail">Email</label>
+                        <input type="email" id="signInEmail" name="email" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="signInPassword">Password</label>
+                        <input type="password" id="signInPassword" name="password" required>
+                    </div>
+                    <button type="submit" class="auth-submit-btn">Sign In</button>
+                </form>
+                <div class="auth-divider">
+                    <span>or</span>
+                </div>
+                <div id="g_id_signin" class="google-signin-btn"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="signUpModal" class="auth-modal" style="display: none;">
+        <div class="auth-modal-content">
+            <div class="auth-modal-header">
+                <h2>Sign Up</h2>
+                <button class="auth-modal-close" onclick="closeSignUpModal()">&times;</button>
+            </div>
+            <div class="auth-modal-body">
+                <form id="signUpForm" class="auth-form">
+                    <div class="form-group">
+                        <label for="signUpFirstName">First Name</label>
+                        <input type="text" id="signUpFirstName" name="firstName" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="signUpLastName">Last Name</label>
+                        <input type="text" id="signUpLastName" name="lastName" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="signUpEmail">Email</label>
+                        <input type="email" id="signUpEmail" name="email" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="signUpPassword">Password</label>
+                        <input type="password" id="signUpPassword" name="password" required>
+                    </div>
+                    <button type="submit" class="auth-submit-btn">Sign Up</button>
+                </form>
+                <div class="auth-divider">
+                    <span>or</span>
+                </div>
+                <div id="g_id_signin_signup" class="google-signin-btn"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="auth.js" defer></script>
+</body>
+</html>
