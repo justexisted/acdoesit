@@ -3,6 +3,8 @@ class AuthSystem {
   constructor() {
     this.currentUser = null;
     this.isAuthenticated = false;
+    this.savedAddresses = [];
+    this.savedNeighborhoods = [];
     this.init();
   }
 
@@ -266,12 +268,18 @@ class AuthSystem {
     this.signIn(user);
   }
 
-  signIn(user) {
+  async signIn(user) {
     this.currentUser = user;
     this.isAuthenticated = true;
     
     // Store session
     localStorage.setItem('currentUser', JSON.stringify(user));
+    
+    // Save user to database
+    await this.saveUserToDatabase(user);
+    
+    // Load saved addresses and neighborhoods
+    await this.loadSavedData();
     
     // Update UI
     this.updateAuthUI();
@@ -287,9 +295,133 @@ class AuthSystem {
     }
   }
 
+  async saveUserToDatabase(user) {
+    try {
+      const response = await fetch('/.netlify/functions/save-user', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ userData: user })
+      });
+
+      if (response.ok) {
+        console.log('User saved to database successfully');
+      } else {
+        console.log('Failed to save user to database:', response.statusText);
+      }
+    } catch (error) {
+      console.log('Error saving user to database:', error);
+    }
+  }
+
+  async loadSavedData() {
+    if (!this.currentUser || !this.currentUser.id) return;
+
+    try {
+      const response = await fetch('/.netlify/functions/manage-saved-data', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+          action: 'get', 
+          userId: this.currentUser.id 
+        })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        this.savedAddresses = data.addresses || [];
+        this.savedNeighborhoods = data.neighborhoods || [];
+        console.log('Loaded saved data:', { addresses: this.savedAddresses, neighborhoods: this.savedNeighborhoods });
+      } else {
+        console.log('Failed to load saved data:', response.statusText);
+      }
+    } catch (error) {
+      console.log('Error loading saved data:', error);
+    }
+  }
+
+  async saveAddress(address, label = '') {
+    if (!this.currentUser || !this.currentUser.id) return false;
+
+    try {
+      const response = await fetch('/.netlify/functions/manage-saved-data', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+          action: 'save', 
+          userId: this.currentUser.id,
+          data: {
+            type: 'address',
+            value: address,
+            label: label || address
+          }
+        })
+      });
+
+      if (response.ok) {
+        await this.loadSavedData(); // Reload saved data
+        return true;
+      } else {
+        console.log('Failed to save address:', response.statusText);
+        return false;
+      }
+    } catch (error) {
+      console.log('Error saving address:', error);
+      return false;
+    }
+  }
+
+  async saveNeighborhood(neighborhood, label = '') {
+    if (!this.currentUser || !this.currentUser.id) return false;
+
+    try {
+      const response = await fetch('/.netlify/functions/manage-saved-data', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+          action: 'save', 
+          userId: this.currentUser.id,
+          data: {
+            type: 'neighborhood',
+            value: neighborhood,
+            label: label || neighborhood
+          }
+        })
+      });
+
+      if (response.ok) {
+        await this.loadSavedData(); // Reload saved data
+        return true;
+      } else {
+        console.log('Failed to save neighborhood:', response.statusText);
+        return false;
+      }
+    } catch (error) {
+      console.log('Error saving neighborhood:', error);
+      return false;
+    }
+  }
+
+  getSavedAddresses() {
+    return this.savedAddresses;
+  }
+
+  getSavedNeighborhoods() {
+    return this.savedNeighborhoods;
+  }
+
   signOut() {
     this.currentUser = null;
     this.isAuthenticated = false;
+    this.savedAddresses = [];
+    this.savedNeighborhoods = [];
     
     // Clear session
     localStorage.removeItem('currentUser');
@@ -308,6 +440,8 @@ class AuthSystem {
         this.currentUser = JSON.parse(savedUser);
         this.isAuthenticated = true;
         this.updateAuthUI();
+        // Load saved data for existing session
+        this.loadSavedData();
       } catch (error) {
         console.error('Error parsing saved user:', error);
         localStorage.removeItem('currentUser');

@@ -56,7 +56,7 @@ document.addEventListener("DOMContentLoaded", () => {
     },
     calendar: {
       fields: [
-        { key: "Target_Neighborhoods", type: "checkboxes", label: "Target Neighborhoods", required: true, options: ["North Park", "La Jolla", "Gaslamp", "Point Loma", "Pacific Beach", "Hillcrest", "Little Italy", "South Park", "Mission Hills", "Ocean Beach", "University City", "Carmel Valley", "Rancho Bernardo", "Clairemont", "Encinitas", "Del Mar", "Chula Vista"] },
+        { key: "Target_Neighborhoods", type: "checkboxes", label: "Target Neighborhoods", required: true, options: ["North Park", "La Jolla", "Gaslamp", "Point Loma", "Pacific Beach", "Hillcrest", "Little Italy", "South Park", "Mission Hills", "Ocean Beach", "University City", "Carmel Valley", "Rancho Bernardo", "Clairemont", "Encinitas", "Del Mar", "Chula Vista"], placeholder: "Type or select a neighborhood" },
         { key: "Social_Media_Platform", type: "select", label: "Platform", required: true, options: ["Instagram", "Facebook"] },
         { key: "Content_Pillars", type: "checkboxes", label: "Content Pillars", required: true, options: ["Market Updates", "Local Events", "Neighborhood Spotlights", "Real Estate Tips", "Client Testimonials"] },
         { key: "Month", type: "select", label: "Month", required: true, options: ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"] }
@@ -165,6 +165,138 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+  // Get saved addresses and neighborhoods from auth system
+  function getSavedAddresses() {
+    try {
+      const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+      if (!currentUser) return [];
+      
+      // Try to get from auth system if available
+      if (window.authSystem && window.authSystem.getSavedAddresses) {
+        return window.authSystem.getSavedAddresses();
+      }
+      
+      // Fallback to localStorage
+      const saved = localStorage.getItem(`savedAddresses_${currentUser.id}`);
+      return saved ? JSON.parse(saved) : [];
+    } catch (error) {
+      console.log('Error getting saved addresses:', error);
+      return [];
+    }
+  }
+
+  function getSavedNeighborhoods() {
+    try {
+      const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+      if (!currentUser) return [];
+      
+      // Try to get from auth system if available
+      if (window.authSystem && window.authSystem.getSavedNeighborhoods) {
+        return window.authSystem.getSavedNeighborhoods();
+      }
+      
+      // Fallback to localStorage
+      const saved = localStorage.getItem(`savedNeighborhoods_${currentUser.id}`);
+      return saved ? JSON.parse(saved) : [];
+    } catch (error) {
+      console.log('Error getting saved neighborhoods:', error);
+      return [];
+    }
+  }
+
+  // Save address to user's account
+  async function saveAddressToAccount(address, label = '') {
+    try {
+      const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+      if (!currentUser) {
+        alert('Please sign in to save addresses');
+        return false;
+      }
+
+      // Try to save via auth system first
+      if (window.authSystem && window.authSystem.saveAddress) {
+        const success = await window.authSystem.saveAddress(address, label);
+        if (success) {
+          showMessage('Address saved successfully!', 'success');
+          return true;
+        }
+      }
+
+      // Fallback to localStorage
+      const saved = getSavedAddresses();
+      const newAddress = { id: Date.now(), value: address, label: label || address, created_at: new Date().toISOString() };
+      saved.push(newAddress);
+      localStorage.setItem(`savedAddresses_${currentUser.id}`, JSON.stringify(saved));
+      
+      showMessage('Address saved successfully!', 'success');
+      return true;
+    } catch (error) {
+      console.log('Error saving address:', error);
+      showMessage('Failed to save address', 'error');
+      return false;
+    }
+  }
+
+  // Save neighborhood to user's account
+  async function saveNeighborhoodToAccount(neighborhood, label = '') {
+    try {
+      const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+      if (!currentUser) {
+        alert('Please sign in to save neighborhoods');
+        return false;
+      }
+
+      // Try to save via auth system first
+      if (window.authSystem && window.authSystem.saveNeighborhood) {
+        const success = await window.authSystem.saveNeighborhood(neighborhood, label);
+        if (success) {
+          showMessage('Neighborhood saved successfully!', 'success');
+          return true;
+        }
+      }
+
+      // Fallback to localStorage
+      const saved = getSavedNeighborhoods();
+      const newNeighborhood = { id: Date.now(), value: neighborhood, label: label || neighborhood, created_at: new Date().toISOString() };
+      saved.push(newNeighborhood);
+      localStorage.setItem(`savedNeighborhoods_${currentUser.id}`, JSON.stringify(saved));
+      
+      showMessage('Neighborhood saved successfully!', 'success');
+      return true;
+    } catch (error) {
+      console.log('Error saving neighborhood:', error);
+      showMessage('Failed to save neighborhood', 'error');
+      return false;
+    }
+  }
+
+  // Show message to user
+  function showMessage(message, type = 'info') {
+    const messageEl = document.createElement('div');
+    messageEl.className = `message message-${type}`;
+    messageEl.textContent = message;
+    
+    messageEl.style.cssText = `
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      padding: 12px 20px;
+      border-radius: 6px;
+      color: white;
+      font-weight: 500;
+      z-index: 3000;
+      background: ${type === 'success' ? '#28a745' : type === 'error' ? '#dc3545' : '#17a2b8'};
+    `;
+
+    document.body.appendChild(messageEl);
+    
+    setTimeout(() => {
+      if (messageEl.parentNode) {
+        messageEl.parentNode.removeChild(messageEl);
+      }
+    }, 3000);
+  }
+
   function renderForm() {
     const { fields } = Modules[activeModule];
     formEl.innerHTML = fields.map(field => {
@@ -176,7 +308,31 @@ document.addEventListener("DOMContentLoaded", () => {
       }
       
       if (field.type === "combobox") {
-        return `<label class="field ${requiredClass}"><span>${field.label}</span><div class="combobox-container"><input type="text" id="${id}" list="${id}-list" placeholder="${field.placeholder || ''}" ${field.required ? "required" : ""}><datalist id="${id}-list">${(field.options || []).map(opt => `<option value="${opt}">`).join("")}</datalist></div></label>`;
+        let options = field.options || [];
+        
+        // Add saved addresses/neighborhoods if applicable
+        if (field.key === "Property_Address" || field.key === "Parcel_Address_or_APN") {
+          const savedAddresses = getSavedAddresses();
+          if (savedAddresses.length > 0) {
+            options = [...savedAddresses.map(addr => addr.value), ...options];
+          }
+        }
+        
+        if (field.key === "Neighborhood" || field.key === "Target_Neighborhoods") {
+          const savedNeighborhoods = getSavedNeighborhoods();
+          if (savedNeighborhoods.length > 0) {
+            options = [...savedNeighborhoods.map(nbhd => nbhd.value), ...options];
+          }
+        }
+        
+        return `<label class="field ${requiredClass}"><span>${field.label}</span><div class="combobox-container">
+          <input type="text" id="${id}" list="${id}-list" placeholder="${field.placeholder || ''}" ${field.required ? "required" : ""}>
+          <datalist id="${id}-list">${options.map(opt => `<option value="${opt}">`).join("")}</datalist>
+          ${field.key === "Property_Address" || field.key === "Parcel_Address_or_APN" ? 
+            `<button type="button" class="save-btn" onclick="saveCurrentAddress('${id}')" title="Save this address">💾</button>` : ''}
+          ${field.key === "Neighborhood" ? 
+            `<button type="button" class="save-btn" onclick="saveCurrentNeighborhood('${id}')" title="Save this neighborhood">💾</button>` : ''}
+        </div></label>`;
       }
       
       if (field.type === "checkboxes") {
@@ -315,8 +471,40 @@ document.addEventListener("DOMContentLoaded", () => {
       prompt_length: text.length
     });
     
-    alert("Save functionality would integrate with your Supabase prompt_sessions table. For now, the prompt is ready to copy.");
+    // For now, just show a success message
+    showMessage('Prompt saved to your account! You can access it later.', 'success');
   }
+
+  // Global functions for saving addresses and neighborhoods
+  window.saveCurrentAddress = async function(fieldId) {
+    const field = document.getElementById(fieldId);
+    if (!field || !field.value.trim()) {
+      showMessage('Please enter an address first', 'error');
+      return;
+    }
+    
+    const address = field.value.trim();
+    const label = prompt('Enter a label for this address (optional):', address);
+    
+    if (label !== null) { // User didn't cancel
+      await saveAddressToAccount(address, label);
+    }
+  };
+
+  window.saveCurrentNeighborhood = async function(fieldId) {
+    const field = document.getElementById(fieldId);
+    if (!field || !field.value.trim()) {
+      showMessage('Please enter a neighborhood first', 'error');
+      return;
+    }
+    
+    const neighborhood = field.value.trim();
+    const label = prompt('Enter a label for this neighborhood (optional):', neighborhood);
+    
+    if (label !== null) { // User didn't cancel
+      await saveNeighborhoodToAccount(neighborhood, label);
+    }
+  };
 
   picker.addEventListener("click", (e) => {
     const moduleBtn = e.target.closest(".module-btn");

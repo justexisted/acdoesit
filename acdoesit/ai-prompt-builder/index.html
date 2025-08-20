@@ -1,207 +1,536 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>AI Prompt Builder — AC Does It</title>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Prompt Builder - San Diego Real Estate</title>
     <link rel="stylesheet" href="../styles.css">
-    <!-- Google Sign-In API -->
-    <script src="https://accounts.google.com/gsi/client" async defer></script>
     <style>
-      .prompt-builder-wrap{min-height:100vh;display:flex;align-items:flex-start;padding-top:40px}
-      .module-picker{display:grid;gap:12px;margin-bottom:24px}
-      @media (min-width:780px){.module-picker{grid-template-columns:repeat(5,1fr)}}
-      .module-btn{background:var(--surface-2);border:2px solid var(--ring);border-radius:8px;padding:16px;text-align:center;cursor:pointer;transition:all 0.2s}
-      .module-btn:hover{border-color:var(--accent);background:var(--accent);color:var(--accent-ink)}
-      .module-btn.active{border-color:var(--accent);background:var(--accent);color:var(--accent-ink)}
-      .module-form{display:grid;gap:16px;margin-bottom:24px}
-      @media (min-width:780px){.module-form{grid-template-columns:repeat(2,1fr)}}
-      @media (min-width:1200px){.module-form{grid-template-columns:repeat(3,1fr)}}
-      .field{display:flex;flex-direction:column;gap:6px}
-      .field span{font-weight:600;font-size:0.9rem}
-      .field input,.field select,.field textarea{padding:8px 12px;border:1px solid #e5e7eb;border-radius:6px;font-size:0.9rem}
-      .field textarea{min-height:80px;resize:vertical}
-      .field select[multiple]{min-height:100px}
-      .field.checkboxes,.field.multiselect{grid-column:1/-1}
-      .field.checkboxes legend,.field.multiselect span{font-weight:600;font-size:0.9rem;margin-bottom:8px}
-      .field.checkboxes label{display:flex;align-items:center;gap:8px;margin-bottom:6px;font-size:0.9rem}
-      .field.checkboxes input[type="checkbox"]{width:auto;margin:0}
-      
-      /* Custom checkbox styling for better appearance */
-      .checkbox-label{display:flex;align-items:center;gap:8px;margin-bottom:8px;cursor:pointer}
-      .checkbox-label input[type="checkbox"]{appearance:none;width:20px;height:20px;border:2px solid #d1d5db;border-radius:4px;display:flex;align-items:center;justify-content:center;background:#fff;cursor:pointer;transition:all 0.2s ease;position:relative}
-      .checkbox-label input[type="checkbox"]:checked{background:#064591;border-color:#064591}
-      .checkbox-label input[type="checkbox"]:checked::after{content:"✓";color:#fff;font-size:16px;font-weight:bold;position:absolute;top:50%;left:50%;transform:translate(-50%, -50%);line-height:1}
-      .checkbox-label input[type="checkbox"]:hover{border-color:#064591}
-      .checkbox-text{font-size:0.9rem;user-select:none}
-      
-      /* Combobox styling */
-      .combobox-container{position:relative}
-      .combobox-container input{width:100%;padding:8px 12px;border:1px solid #e5e7eb;border-radius:6px;font-size:0.9rem}
-      .combobox-container input:focus{outline:none;border-color:#064591;box-shadow:0 0 0 3px rgba(6, 69, 145, 0.1)}
-      
-      /* Template selector styling */
-      .template-selector{margin-top:20px;padding:16px;background:#f8fafc;border:1px solid #e5e7eb;border-radius:8px}
-      .template-selector h3{margin:0 0 12px 0;font-size:1.1rem;color:var(--accent)}
-      .template-buttons{display:flex;gap:8px;flex-wrap:wrap}
-      .template-btn{padding:8px 16px;border:1px solid #d1d5db;border-radius:6px;background:#fff;cursor:pointer;transition:all 0.2s ease;font-size:0.9rem}
-      .template-btn:hover{border-color:#064591;background:#f0f4ff}
-      .template-btn.active{border-color:#064591;background:#064591;color:#fff}
-      
-      .actions{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:24px}
-      .preview{background:#f8fafc;border:1px solid #e5e7eb;border-radius:8px;padding:16px;white-space:pre-wrap;font-family:monospace;font-size:0.9rem;line-height:1.5;max-height:400px;overflow-y:auto}
-      .error{color:var(--bad);font-size:0.8rem;margin-top:4px}
-      .required::after{content:" *";color:var(--bad)}
-      .suffix{position:relative}
-      .suffix input{padding-right:40px}
-      .suffix::after{content:attr(data-suffix);position:absolute;right:12px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:0.8rem}
-    </style>
-  </head>
-  <body>
-    <!-- Authentication Check -->
-    <div id="auth-required" style="display: none; min-height: 100vh; display: flex; align-items: center; justify-content: center; background: var(--bg);">
-      <div style="text-align: center; max-width: 500px; padding: 40px;">
-        <h1 style="color: var(--accent); margin-bottom: 16px;">Authentication Required</h1>
-        <p style="color: var(--muted); margin-bottom: 24px;">You need to sign up or sign in to access the AI Prompt Builder.</p>
-        <div style="display: flex; gap: 12px; justify-content: center;">
-          <a href="../contact.html" class="btn btn-accent">Sign Up for Free Access</a>
-          <a href="../index.html" class="btn">Back to Home</a>
-        </div>
-      </div>
-    </div>
-
-    <div id="app-content" style="display: none;">
-      <header class="page-header">
-        <div class="header-content">
-          <div class="header-logo">
-            <img src="../assets/newlogo.png" alt="AC Does It">
-            <span class="brand-text">AC Does It</span>
-          </div>
-          <div class="nav-row">
-            <a class="btn" href="../index.html">← Back</a>
-            <div style="display: flex; align-items: center; gap: 12px;">
-              <span id="user-welcome" style="color: var(--muted); font-size: 0.9rem;"></span>
-              <button onclick="signOut()" class="btn" style="font-size: 0.9rem;">Sign Out</button>
-            </div>
-          </div>
-        </div>
-      </header>
-    
-    <main class="section prompt-builder-wrap">
-      <div class="container" style="width:min(1200px,100% - 24px)">
-        <h1 style="font-size:clamp(1.4rem,4vw,2rem);margin-bottom:10px">AI Prompt Builder</h1>
-        <p class="subhead">Generate professional AI prompts for San Diego real estate</p>
-
-        <!-- Module Picker -->
-        <div id="module-picker" class="module-picker">
-          <button class="module-btn active" data-module="listing">
-            <strong>Property Listing</strong>
-            <div style="font-size:0.8rem;margin-top:4px">Generate SEO-friendly MLS descriptions</div>
-          </button>
-          <button class="module-btn" data-module="investment">
-            <strong>Investment Analysis</strong>
-            <div style="font-size:0.8rem;margin-top:4px">Quick financial viability check</div>
-          </button>
-          <button class="module-btn" data-module="zoning">
-            <strong>Zoning & Feasibility</strong>
-            <div style="font-size:0.8rem;margin-top:4px">SD Municipal Code analysis</div>
-          </button>
-          <button class="module-btn" data-module="staging">
-            <strong>Staging Plan</strong>
-            <div style="font-size:0.8rem;margin-top:4px">Room-by-room staging strategy</div>
-          </button>
-          <button class="module-btn" data-module="calendar">
-            <strong>Content Calendar</strong>
-            <div style="font-size:0.8rem;margin-top:4px">Monthly social media posts</div>
-          </button>
-        </div>
-
-        <!-- Dynamic Form -->
-        <form id="module-form" class="module-form"></form>
-
-        <!-- Template Selection (for Property Listing) -->
-        <div id="template-selector" class="template-selector" style="display:none;margin-top:16px;">
-          <h3 style="margin-bottom:12px">Choose Template Style:</h3>
-          <div class="template-buttons">
-            <button class="template-btn active" data-template="full">Full Description</button>
-            <button class="template-btn" data-template="zillow">Zillow (Concise)</button>
-            <button class="template-btn" data-template="instagram">Instagram (Social)</button>
-          </div>
-        </div>
-
-        <!-- Actions -->
-        <div class="actions">
-          <button id="generate-btn" class="btn btn-accent">Generate Prompt</button>
-          <button id="copy-btn" class="btn">Copy to Clipboard</button>
-          <button id="save-btn" class="btn">Save to Account</button>
-        </div>
-
-        <!-- Preview -->
-        <div id="preview-container" style="display:none">
-          <h3>Generated Prompt:</h3>
-          <pre id="preview" class="preview"></pre>
-        </div>
-      </div>
-    </main>
-    </div>
-
-    <script src="../auth.js" defer></script>
-    <script>
-      // Authentication check for AI Prompt Builder
-      let authSystem;
-      
-      // Function to check authentication and show appropriate content
-      function checkAuthAndShowContent() {
-        const authRequired = document.getElementById('auth-required');
-        const appContent = document.getElementById('app-content');
-        const userWelcome = document.getElementById('user-welcome');
-        
-        // Get current user from localStorage
-        const savedUser = localStorage.getItem('currentUser');
-        
-        if (savedUser) {
-          try {
-            const user = JSON.parse(savedUser);
-            // User is authenticated, show the app
-            authRequired.style.display = 'none';
-            appContent.style.display = 'block';
-            if (userWelcome) {
-              userWelcome.textContent = `Welcome, ${user.firstName}!`;
-            }
-          } catch (error) {
-            // Invalid user data, show auth required
-            localStorage.removeItem('currentUser');
-            authRequired.style.display = 'flex';
-            appContent.style.display = 'none';
-          }
-        } else {
-          // No user, show auth required
-          authRequired.style.display = 'flex';
-          appContent.style.display = 'none';
+        .ai-prompt-builder {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
         }
-      }
-      
-      // Sign out function
-      function signOut() {
-        localStorage.removeItem('currentUser');
-        alert('You have been signed out.');
-        window.location.href = '../index.html';
-      }
-      
-      // Check authentication when page loads
-      document.addEventListener('DOMContentLoaded', () => {
-        checkAuthAndShowContent();
-      });
-      
-      // Listen for authentication events
-      window.addEventListener('userSignedIn', () => {
-        checkAuthAndShowContent();
-      });
-      
-      window.addEventListener('userSignedOut', () => {
-        checkAuthAndShowContent();
-      });
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #e5e7eb;
+        }
+
+        .header h1 {
+            margin: 0;
+            color: #1f2937;
+            font-size: 2rem;
+        }
+
+        .user-welcome {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            color: #374151;
+        }
+
+        .user-welcome span {
+            font-weight: 500;
+        }
+
+        .back-btn {
+            background: #6b7280;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            text-decoration: none;
+            font-size: 0.9rem;
+        }
+
+        .back-btn:hover {
+            background: #4b5563;
+        }
+
+        .module-picker {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+
+        .module-btn {
+            background: #f3f4f6;
+            border: 2px solid #e5e7eb;
+            padding: 12px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-weight: 500;
+            color: #374151;
+        }
+
+        .module-btn:hover {
+            background: #e5e7eb;
+            border-color: #d1d5db;
+        }
+
+        .module-btn.active {
+            background: var(--accent, #3b82f6);
+            color: white;
+            border-color: var(--accent, #3b82f6);
+        }
+
+        .template-selector {
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #f9fafb;
+            border-radius: 8px;
+            border: 1px solid #e5e7eb;
+        }
+
+        .template-selector h3 {
+            margin: 0 0 15px 0;
+            color: #374151;
+            font-size: 1.1rem;
+        }
+
+        .template-buttons {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .template-btn {
+            background: white;
+            border: 1px solid #d1d5db;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 0.9rem;
+        }
+
+        .template-btn:hover {
+            background: #f3f4f6;
+        }
+
+        .template-btn.active {
+            background: var(--accent, #3b82f6);
+            color: white;
+            border-color: var(--accent, #3b82f6);
+        }
+
+        .form-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .module-form {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            border: 1px solid #e5e7eb;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .module-form h2 {
+            margin: 0 0 20px 0;
+            color: #1f2937;
+            font-size: 1.5rem;
+        }
+
+        .field {
+            margin-bottom: 20px;
+        }
+
+        .field span {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #374151;
+        }
+
+        .field.required span::after {
+            content: " *";
+            color: #ef4444;
+        }
+
+        .field input,
+        .field select,
+        .field textarea {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 14px;
+            transition: border-color 0.2s;
+            box-sizing: border-box;
+        }
+
+        .field input:focus,
+        .field select:focus,
+        .field textarea:focus {
+            outline: none;
+            border-color: var(--accent, #3b82f6);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        .field textarea {
+            min-height: 80px;
+            resize: vertical;
+        }
+
+        .combobox-container {
+            position: relative;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .combobox-container input {
+            flex: 1;
+        }
+
+        .save-btn {
+            background: #10b981;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.2s;
+            min-width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .save-btn:hover {
+            background: #059669;
+        }
+
+        .suffix {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .suffix::after {
+            content: attr(data-suffix);
+            position: absolute;
+            right: 12px;
+            color: #6b7280;
+            font-size: 14px;
+            pointer-events: none;
+        }
+
+        .suffix input {
+            padding-right: 60px;
+        }
+
+        .checkboxes {
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            padding: 15px;
+        }
+
+        .checkboxes legend {
+            font-weight: 500;
+            color: #374151;
+            margin-bottom: 10px;
+        }
+
+        .checkbox-label {
+            display: flex;
+            align-items: center;
+            margin-bottom: 8px;
+            cursor: pointer;
+        }
+
+        .checkbox-label input[type="checkbox"] {
+            width: auto;
+            margin-right: 8px;
+        }
+
+        .checkbox-text {
+            font-size: 14px;
+            color: #374151;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 15px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            background: var(--accent, #3b82f6);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 500;
+            transition: background-color 0.2s;
+        }
+
+        .btn:hover {
+            background: #2563eb;
+        }
+
+        .btn-secondary {
+            background: #6b7280;
+        }
+
+        .btn-secondary:hover {
+            background: #4b5563;
+        }
+
+        .preview-container {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            border: 1px solid #e5e7eb;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            margin-top: 20px;
+        }
+
+        .preview-container h3 {
+            margin: 0 0 15px 0;
+            color: #1f2937;
+            font-size: 1.3rem;
+        }
+
+        .preview {
+            background: #f9fafb;
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid #e5e7eb;
+            white-space: pre-wrap;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            line-height: 1.5;
+            color: #374151;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .message {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 12px 20px;
+            border-radius: 6px;
+            color: white;
+            font-weight: 500;
+            z-index: 3000;
+            animation: slideIn 0.3s ease;
+        }
+
+        .message-success {
+            background: #10b981;
+        }
+
+        .message-error {
+            background: #ef4444;
+        }
+
+        .message-info {
+            background: #3b82f6;
+        }
+
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        @media (max-width: 768px) {
+            .form-container {
+                grid-template-columns: 1fr;
+            }
+            
+            .header {
+                flex-direction: column;
+                gap: 15px;
+                align-items: flex-start;
+            }
+            
+            .module-picker {
+                justify-content: center;
+            }
+            
+            .action-buttons {
+                justify-content: center;
+            }
+        }
+
+        .auth-required {
+            text-align: center;
+            padding: 60px 20px;
+            background: white;
+            border-radius: 12px;
+            border: 1px solid #e5e7eb;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .auth-required h2 {
+            color: #1f2937;
+            margin-bottom: 15px;
+        }
+
+        .auth-required p {
+            color: #6b7280;
+            margin-bottom: 25px;
+            font-size: 1.1rem;
+        }
+
+        .auth-buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .auth-btn {
+            background: var(--accent, #3b82f6);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 500;
+            text-decoration: none;
+            transition: background-color 0.2s;
+        }
+
+        .auth-btn:hover {
+            background: #2563eb;
+        }
+
+        .auth-btn-secondary {
+            background: #6b7280;
+        }
+
+        .auth-btn-secondary:hover {
+            background: #4b5563;
+        }
+    </style>
+</head>
+<body>
+    <div class="ai-prompt-builder">
+        <!-- Authentication Required Message -->
+        <div id="auth-required" class="auth-required">
+            <h2>🔐 Authentication Required</h2>
+            <p>Please sign in or create an account to access the AI Prompt Builder.</p>
+            <div class="auth-buttons">
+                <button onclick="openSignUpModal()" class="auth-btn">Sign Up</button>
+                <button onclick="openSignInModal()" class="auth-btn auth-btn-secondary">Sign In</button>
+            </div>
+        </div>
+
+        <!-- Main App Content -->
+        <div id="app-content" style="display: none;">
+            <div class="header">
+                <h1>🏠 AI Prompt Builder</h1>
+                <div class="user-welcome">
+                    <span id="user-greeting">Welcome!</span>
+                    <button onclick="signOut()" class="btn" style="font-size: 0.9rem;">Sign Out</button>
+                </div>
+            </div>
+
+            <div class="nav-row">
+                <a href="../index.html" class="back-btn">← Back</a>
+            </div>
+
+            <div class="module-picker" id="module-picker">
+                <button class="module-btn active" data-module="listing">📝 Property Listing</button>
+                <button class="module-btn" data-module="investment">💰 Investment Analysis</button>
+                <button class="module-btn" data-module="zoning">🏗️ Zoning Research</button>
+                <button class="module-btn" data-module="staging">🎨 Home Staging</button>
+                <button class="module-btn" data-module="calendar">📅 Content Calendar</button>
+            </div>
+
+            <div class="template-selector" id="template-selector">
+                <h3>Choose Template:</h3>
+                <div class="template-buttons">
+                    <button class="template-btn active" data-template="full">Full Description</button>
+                    <button class="template-btn" data-template="zillow">Zillow Optimized</button>
+                    <button class="template-btn" data-template="instagram">Instagram Post</button>
+                </div>
+            </div>
+
+            <div class="form-container">
+                <div class="module-form">
+                    <h2>📋 Property Details</h2>
+                    <form id="module-form">
+                        <!-- Form fields will be dynamically generated here -->
+                    </form>
+                    
+                    <div class="action-buttons">
+                        <button id="generate-btn" class="btn">🚀 Generate Prompt</button>
+                    </div>
+                </div>
+
+                <div class="preview-container" id="preview-container" style="display: none;">
+                    <h3>✨ Generated Prompt</h3>
+                    <div class="preview" id="preview"></div>
+                    
+                    <div class="action-buttons">
+                        <button id="copy-btn" class="btn btn-secondary">📋 Copy to Clipboard</button>
+                        <button id="save-btn" class="btn">💾 Save to Account</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <script src="../auth.js"></script>
+    <script src="ai-prompt-builder.js"></script>
+    <script>
+        // Check authentication and show appropriate content
+        function checkAuthAndShowContent() {
+            const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+            const authRequired = document.getElementById('auth-required');
+            const appContent = document.getElementById('app-content');
+            const userGreeting = document.getElementById('user-greeting');
+
+            if (currentUser && currentUser.firstName) {
+                // User is authenticated
+                authRequired.style.display = 'none';
+                appContent.style.display = 'block';
+                userGreeting.textContent = `Welcome, ${currentUser.firstName}!`;
+                
+                // Make authSystem available globally for the AI Prompt Builder
+                window.authSystem = window.authSystem || {};
+            } else {
+                // User is not authenticated
+                authRequired.style.display = 'block';
+                appContent.style.display = 'none';
+            }
+        }
+
+        // Check auth on page load
+        document.addEventListener('DOMContentLoaded', checkAuthAndShowContent);
+
+        // Listen for auth events
+        window.addEventListener('userSignedIn', (event) => {
+            checkAuthAndShowContent();
+        });
+
+        window.addEventListener('userSignedOut', () => {
+            checkAuthAndShowContent();
+        });
     </script>
-    <script src="./ai-prompt-builder.js" defer></script>
-  </body>
+</body>
 </html>
