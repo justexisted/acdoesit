@@ -324,21 +324,44 @@ document.addEventListener("DOMContentLoaded", () => {
   };
 
   // Delete property
-  window.deleteProperty = function(index) {
+  window.deleteProperty = async function(index) {
     if (confirm('Are you sure you want to delete this saved property?')) {
-      savedProperties.splice(index, 1);
-      
       try {
         const currentUser = JSON.parse(localStorage.getItem('currentUser'));
-        if (currentUser) {
-          localStorage.setItem(`savedProperties_${currentUser.id}`, JSON.stringify(savedProperties));
+        if (!currentUser) {
+          showMessage('Please sign in to delete properties', 'error');
+          return;
+        }
+
+        const propertyToDelete = savedProperties[index];
+        if (!propertyToDelete || !propertyToDelete.id) {
+          showMessage('Property not found', 'error');
+          return;
+        }
+
+        // Delete from database
+        const response = await fetch('/.netlify/functions/delete-user-property', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            userId: currentUser.id,
+            propertyId: propertyToDelete.id
+          })
+        });
+
+        if (response.ok) {
+          // Remove from local array
+          savedProperties.splice(index, 1);
+          displaySavedProperties();
+          showMessage('Property deleted successfully!', 'success');
+        } else {
+          const errorText = await response.text();
+          showMessage(`Failed to delete property: ${errorText}`, 'error');
         }
       } catch (error) {
-        console.log('Error saving updated properties:', error);
+        console.error('Error deleting property:', error);
+        showMessage('Failed to delete property. Please try again.', 'error');
       }
-      
-      displaySavedProperties();
-      showMessage('Property deleted successfully!', 'success');
     }
   };
 

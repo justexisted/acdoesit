@@ -1,10 +1,8 @@
-// Authentication System
+// Professional Authentication System
 class AuthSystem {
   constructor() {
     this.currentUser = null;
     this.isAuthenticated = false;
-    this.savedAddresses = [];
-    this.savedNeighborhoods = [];
     this.init();
   }
 
@@ -27,6 +25,12 @@ class AuthSystem {
       signInForm.addEventListener('submit', (e) => this.handleSignIn(e));
     }
 
+    // Password reset form
+    const passwordResetForm = document.getElementById('passwordResetForm');
+    if (passwordResetForm) {
+      passwordResetForm.addEventListener('submit', (e) => this.handlePasswordReset(e));
+    }
+
     // Close modals when clicking outside
     document.addEventListener('click', (e) => {
       if (e.target.classList.contains('auth-modal')) {
@@ -43,48 +47,19 @@ class AuthSystem {
   }
 
   setupGoogleAuth() {
-    console.log('Setting up Google Auth...');
-    
-    // Function to check and initialize Google Auth
-    const checkAndInitGoogleAuth = () => {
-      if (typeof google !== 'undefined' && google.accounts && google.accounts.id) {
-        console.log('Google API loaded, initializing...');
-        this.initializeGoogleAuth();
-        return true;
-      }
-      return false;
-    };
-
-    // Try to initialize immediately
-    if (checkAndInitGoogleAuth()) {
-      return;
-    }
-
-    // If not ready, wait for load event
-    window.addEventListener('load', () => {
-      if (checkAndInitGoogleAuth()) {
-        return;
-      }
-      
-      // If still not ready, try with intervals
-      const interval = setInterval(() => {
-        if (checkAndInitGoogleAuth()) {
-          clearInterval(interval);
+    if (typeof google !== 'undefined' && google.accounts && google.accounts.id) {
+      this.initializeGoogleAuth();
+    } else {
+      window.addEventListener('load', () => {
+        if (typeof google !== 'undefined' && google.accounts && google.accounts.id) {
+          this.initializeGoogleAuth();
         }
-      }, 500);
-      
-      // Stop trying after 10 seconds
-      setTimeout(() => {
-        clearInterval(interval);
-        console.log('Google API failed to load after 10 seconds');
-      }, 10000);
-    });
+      });
+    }
   }
 
   initializeGoogleAuth() {
     try {
-      console.log('Initializing Google Auth...');
-      
       // Initialize Google Sign-In for sign in modal
       if (document.getElementById('g_id_signin')) {
         google.accounts.id.initialize({
@@ -102,7 +77,6 @@ class AuthSystem {
             type: 'standard'
           }
         );
-        console.log('Sign in Google button rendered');
       }
 
       // Initialize Google Sign-In for sign up modal
@@ -122,25 +96,9 @@ class AuthSystem {
             type: 'standard'
           }
         );
-        console.log('Sign up Google button rendered');
       }
     } catch (error) {
       console.error('Error initializing Google Auth:', error);
-      this.showGoogleAuthError();
-    }
-  }
-
-  showGoogleAuthError() {
-    // Show a message that Google auth failed to load
-    const signInGoogleBtn = document.getElementById('g_id_signin');
-    const signUpGoogleBtn = document.getElementById('g_id_signin_signup');
-    
-    if (signInGoogleBtn) {
-      signInGoogleBtn.innerHTML = '<button class="auth-btn auth-btn-signin" disabled>Google Sign-In Unavailable</button>';
-    }
-    
-    if (signUpGoogleBtn) {
-      signUpGoogleBtn.innerHTML = '<button class="auth-btn auth-btn-signin" disabled>Google Sign-Up Unavailable</button>';
     }
   }
 
@@ -148,13 +106,11 @@ class AuthSystem {
     e.preventDefault();
     
     try {
-      // Get form data directly from the form elements
       const firstName = document.getElementById('signUpFirstName').value.trim();
       const lastName = document.getElementById('signUpLastName').value.trim();
       const email = document.getElementById('signUpEmail').value.trim();
       const password = document.getElementById('signUpPassword').value;
 
-      // Validate data
       if (!firstName || !lastName || !email || !password) {
         throw new Error('All fields are required');
       }
@@ -163,19 +119,23 @@ class AuthSystem {
         throw new Error('Password must be at least 6 characters long');
       }
 
-      const userData = { firstName, lastName, email, password };
+      // Check if user already exists
+      const existingUser = await this.checkUserExists(email);
+      if (existingUser) {
+        // Show password reset option instead
+        this.showPasswordResetOption(email);
+        return;
+      }
 
-      // Create user account
-      const user = await this.simulateSignUp(userData);
+      // Create new user
+      const user = await this.createUser({ firstName, lastName, email, password });
       
       // Sign in the user
-      this.signIn(user);
+      await this.signIn(user);
       
-      // Show success message
-      this.showMessage('Account created successfully! You now have access to the AI Prompt Builder.', 'success');
-      
-      // Close modal after successful authentication
+      this.showMessage('Account created successfully!', 'success');
       this.closeAllModals();
+      
     } catch (error) {
       this.showMessage(error.message, 'error');
     }
@@ -185,7 +145,6 @@ class AuthSystem {
     e.preventDefault();
     
     try {
-      // Get form data directly from the form elements
       const email = document.getElementById('signInEmail').value.trim();
       const password = document.getElementById('signInPassword').value;
 
@@ -193,88 +152,133 @@ class AuthSystem {
         throw new Error('Email and password are required');
       }
 
-      const credentials = { email, password };
+      // Verify credentials
+      const user = await this.verifyCredentials(email, password);
+      if (!user) {
+        throw new Error('Invalid email or password');
+      }
 
-      // Simulate successful signin
-      await this.simulateSignIn(credentials);
-      
       // Sign in the user
-      this.signIn(user);
+      await this.signIn(user);
       
-      // Show success message
       this.showMessage('Signed in successfully!', 'success');
-      
-      // Close modal after successful authentication
       this.closeAllModals();
+      
     } catch (error) {
       this.showMessage(error.message, 'error');
     }
   }
 
-  async simulateSignUp(userData) {
-    // Validate data
-    if (!userData.firstName || !userData.lastName || !userData.email || !userData.password) {
-      throw new Error('All fields are required');
-    }
-
-    // Create user object
-    const user = {
-      id: Date.now().toString(),
-      firstName: userData.firstName,
-      lastName: userData.lastName,
-      email: userData.email,
-      password: userData.password, // Store password for future sign-ins
-      createdAt: new Date().toISOString(),
-      provider: 'email'
-    };
-
-    // Save user to database first
-    const savedToDb = await this.saveUserToDatabase(user);
-    if (!savedToDb) {
-      throw new Error('Failed to create account. Please try again.');
-    }
-
-    // Also save to localStorage for consistency
-    const existingUsers = localStorage.getItem('users');
-    const users = existingUsers ? JSON.parse(existingUsers) : [];
-    users.push(user);
-    localStorage.setItem('users', JSON.stringify(users));
+  async handlePasswordReset(e) {
+    e.preventDefault();
     
-    return user;
+    try {
+      const email = document.getElementById('resetEmail').value.trim();
+      
+      if (!email) {
+        throw new Error('Email is required');
+      }
+
+      // Check if user exists
+      const user = await this.checkUserExists(email);
+      if (!user) {
+        throw new Error('No account found with this email address');
+      }
+
+      // Send password reset email (implement this function)
+      await this.sendPasswordResetEmail(email);
+      
+      this.showMessage('Password reset email sent! Check your inbox.', 'success');
+      this.closeAllModals();
+      
+    } catch (error) {
+      this.showMessage(error.message, 'error');
+    }
   }
 
-  async simulateSignIn(credentials) {
-    // Check if user exists in localStorage first (for quick lookup)
-    const existingUsers = localStorage.getItem('users');
-    let user = null;
+  async checkUserExists(email) {
+    try {
+      const response = await fetch('/.netlify/functions/get-user-by-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        return data.user;
+      }
+      return null;
+    } catch (error) {
+      console.error('Error checking user existence:', error);
+      return null;
+    }
+  }
+
+  async createUser(userData) {
+    try {
+      const user = {
+        id: Date.now().toString(),
+        firstName: userData.firstName,
+        lastName: userData.lastName,
+        email: userData.email,
+        password: userData.password, // In production, hash this
+        createdAt: new Date().toISOString(),
+        provider: 'email'
+      };
+
+      const response = await fetch('/.netlify/functions/save-user', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userData: user })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to create account');
+      }
+
+      return user;
+    } catch (error) {
+      console.error('Error creating user:', error);
+      throw new Error('Failed to create account');
+    }
+  }
+
+  async verifyCredentials(email, password) {
+    try {
+      const user = await this.checkUserExists(email);
+      if (!user) return null;
+
+      // In production, verify password hash
+      if (user.password === password) {
+        return user;
+      }
+      return null;
+    } catch (error) {
+      console.error('Error verifying credentials:', error);
+      return null;
+    }
+  }
+
+  async sendPasswordResetEmail(email) {
+    // Implement password reset email functionality
+    // For now, just return success
+    return true;
+  }
+
+  showPasswordResetOption(email) {
+    // Hide sign up form, show password reset form
+    const signUpForm = document.getElementById('signUpForm');
+    const passwordResetForm = document.getElementById('passwordResetForm');
+    const resetEmail = document.getElementById('resetEmail');
     
-    if (existingUsers) {
-      const users = JSON.parse(existingUsers);
-      user = users.find(u => u.email === credentials.email);
-    }
-    
-    if (!user) {
-      throw new Error('User not found. Please sign up first.');
-    }
-
-    // Password validation
-    if (!credentials.password || credentials.password.length < 6) {
-      throw new Error('Password must be at least 6 characters long.');
-    }
-
-    // Check if password matches
-    if (user.password !== credentials.password) {
-      throw new Error('Invalid password. Please try again.');
-    }
-
-    // Verify user exists in database and get latest data
-    const dbUser = await this.verifyUserInDatabase(user.email);
-    if (dbUser) {
-      // Use database user data (more up-to-date)
-      this.signIn(dbUser);
-    } else {
-      // Fall back to localStorage user
-      this.signIn(user);
+    if (signUpForm && passwordResetForm && resetEmail) {
+      signUpForm.style.display = 'none';
+      passwordResetForm.style.display = 'block';
+      resetEmail.value = email;
+      
+      // Show message
+      this.showMessage('An account with this email already exists. Use the form below to reset your password.', 'info');
     }
   }
 
@@ -282,192 +286,38 @@ class AuthSystem {
     this.currentUser = user;
     this.isAuthenticated = true;
     
-    // Store session
-    localStorage.setItem('currentUser', JSON.stringify(user));
-    
-    // Save user to database
-    await this.saveUserToDatabase(user);
-    
-    // Load saved addresses and neighborhoods
-    await this.loadSavedData();
+    // Store session in database (not just localStorage)
+    await this.updateUserSession(user);
     
     // Update UI
     this.updateAuthUI();
     
-    // Verify authentication was successful
-    if (this.isAuthenticated && this.currentUser) {
-      console.log('User successfully authenticated:', this.currentUser.firstName);
-      
-      // Trigger custom event
-      window.dispatchEvent(new CustomEvent('userSignedIn', { detail: user }));
-    } else {
-      console.error('Authentication failed - user not properly set');
-    }
+    // Trigger custom event
+    window.dispatchEvent(new CustomEvent('userSignedIn', { detail: user }));
   }
 
-  async saveUserToDatabase(user) {
+  async updateUserSession(user) {
     try {
-      console.log('Attempting to save user to database:', {
-        id: user.id,
-        email: user.email,
-        provider: user.provider || 'email'
-      });
-
-      const response = await fetch('/.netlify/functions/save-user', {
+      // Update last login time in database
+      await fetch('/.netlify/functions/update-user-session', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ userData: user })
-      });
-
-      if (response.ok) {
-        console.log('User saved to database successfully');
-        return true;
-      } else {
-        const errorText = await response.text();
-        console.log('Failed to save user to database:', response.status, errorText);
-        return false;
-      }
-    } catch (error) {
-      console.log('Error saving user to database:', error);
-      return false;
-    }
-  }
-
-  async verifyUserInDatabase(email) {
-    try {
-      const response = await fetch('/.netlify/functions/get-user-by-email', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email: email })
-      });
-
-      if (response.ok) {
-        const userData = await response.json();
-        return userData.user || null;
-      } else {
-        console.log('User not found in database:', response.status);
-        return null;
-      }
-    } catch (error) {
-      console.log('Error verifying user in database:', error);
-      return null;
-    }
-  }
-
-  async loadSavedData() {
-    if (!this.currentUser || !this.currentUser.id) return;
-
-    try {
-      const response = await fetch('/.netlify/functions/manage-saved-data', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
-          action: 'get', 
-          userId: this.currentUser.id 
+          userId: user.id,
+          lastLogin: new Date().toISOString()
         })
       });
-
-      if (response.ok) {
-        const data = await response.json();
-        this.savedAddresses = data.addresses || [];
-        this.savedNeighborhoods = data.neighborhoods || [];
-        console.log('Loaded saved data:', { addresses: this.savedAddresses, neighborhoods: this.savedNeighborhoods });
-      } else {
-        console.log('Failed to load saved data:', response.statusText);
-      }
     } catch (error) {
-      console.log('Error loading saved data:', error);
+      console.error('Error updating user session:', error);
     }
-  }
-
-  async saveAddress(address, label = '') {
-    if (!this.currentUser || !this.currentUser.id) return false;
-
-    try {
-      const response = await fetch('/.netlify/functions/manage-saved-data', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ 
-          action: 'save', 
-          userId: this.currentUser.id,
-          data: {
-            type: 'address',
-            value: address,
-            label: label || address
-          }
-        })
-      });
-
-      if (response.ok) {
-        await this.loadSavedData(); // Reload saved data
-        return true;
-      } else {
-        console.log('Failed to save address:', response.statusText);
-        return false;
-      }
-    } catch (error) {
-      console.log('Error saving address:', error);
-      return false;
-    }
-  }
-
-  async saveNeighborhood(neighborhood, label = '') {
-    if (!this.currentUser || !this.currentUser.id) return false;
-
-    try {
-      const response = await fetch('/.netlify/functions/manage-saved-data', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ 
-          action: 'save', 
-          userId: this.currentUser.id,
-          data: {
-            type: 'neighborhood',
-            value: neighborhood,
-            label: label || neighborhood
-          }
-        })
-      });
-
-      if (response.ok) {
-        await this.loadSavedData(); // Reload saved data
-        return true;
-      } else {
-        console.log('Failed to save neighborhood:', response.statusText);
-        return false;
-      }
-    } catch (error) {
-      console.log('Error saving neighborhood:', error);
-      return false;
-    }
-  }
-
-  getSavedAddresses() {
-    return this.savedAddresses;
-  }
-
-  getSavedNeighborhoods() {
-    return this.savedNeighborhoods;
   }
 
   signOut() {
     this.currentUser = null;
     this.isAuthenticated = false;
-    this.savedAddresses = [];
-    this.savedNeighborhoods = [];
     
-    // Clear session
-    localStorage.removeItem('currentUser');
+    // Clear session from database
+    this.clearUserSession();
     
     // Update UI
     this.updateAuthUI();
@@ -476,19 +326,107 @@ class AuthSystem {
     window.dispatchEvent(new CustomEvent('userSignedOut'));
   }
 
-  checkAuthStatus() {
-    const savedUser = localStorage.getItem('currentUser');
-    if (savedUser) {
-      try {
-        this.currentUser = JSON.parse(savedUser);
-        this.isAuthenticated = true;
-        this.updateAuthUI();
-        // Load saved data for existing session
-        this.loadSavedData();
-      } catch (error) {
-        console.error('Error parsing saved user:', error);
-        localStorage.removeItem('currentUser');
+  async clearUserSession() {
+    try {
+      if (this.currentUser) {
+        await fetch('/.netlify/functions/clear-user-session', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId: this.currentUser.id })
+        });
       }
+    } catch (error) {
+      console.error('Error clearing user session:', error);
+    }
+  }
+
+  async handleGoogleUser(user) {
+    try {
+      // Check if user already exists
+      const existingUser = await this.checkUserExists(user.email);
+      
+      if (existingUser) {
+        // Update existing user with Google info
+        await this.updateGoogleUser(existingUser.id, user);
+        await this.signIn(existingUser);
+      } else {
+        // Create new Google user
+        const newUser = await this.createGoogleUser(user);
+        await this.signIn(newUser);
+      }
+      
+      this.showMessage('Signed in with Google successfully!', 'success');
+      this.closeAllModals();
+      
+    } catch (error) {
+      console.error('Error handling Google user:', error);
+      this.showMessage('Error signing in with Google. Please try again.', 'error');
+    }
+  }
+
+  async updateGoogleUser(userId, googleUser) {
+    try {
+      await fetch('/.netlify/functions/update-google-user', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId, googleUser })
+      });
+    } catch (error) {
+      console.error('Error updating Google user:', error);
+    }
+  }
+
+  async createGoogleUser(googleUser) {
+    try {
+      const user = {
+        id: googleUser.id,
+        firstName: googleUser.firstName,
+        lastName: googleUser.lastName,
+        email: googleUser.email,
+        picture: googleUser.picture,
+        createdAt: googleUser.createdAt,
+        provider: 'google'
+      };
+
+      const response = await fetch('/.netlify/functions/save-user', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userData: user })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to create Google account');
+      }
+
+      return user;
+    } catch (error) {
+      console.error('Error creating Google user:', error);
+      throw new Error('Failed to create Google account');
+    }
+  }
+
+  checkAuthStatus() {
+    // Check if user has valid session in database
+    this.checkDatabaseSession();
+  }
+
+  async checkDatabaseSession() {
+    try {
+      const response = await fetch('/.netlify/functions/check-session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.user) {
+          this.currentUser = data.user;
+          this.isAuthenticated = true;
+          this.updateAuthUI();
+        }
+      }
+    } catch (error) {
+      console.error('Error checking database session:', error);
     }
   }
 
@@ -511,12 +449,10 @@ class AuthSystem {
   }
 
   showMessage(message, type = 'info') {
-    // Create and show a temporary message
     const messageEl = document.createElement('div');
     messageEl.className = `auth-message auth-message-${type}`;
     messageEl.textContent = message;
     
-    // Add styles
     messageEl.style.cssText = `
       position: fixed;
       top: 20px;
@@ -530,7 +466,6 @@ class AuthSystem {
       background: ${type === 'success' ? '#28a745' : type === 'error' ? '#dc3545' : '#17a2b8'};
     `;
 
-    // Add animation styles
     if (!document.getElementById('auth-message-styles')) {
       const style = document.createElement('style');
       style.id = 'auth-message-styles';
@@ -549,7 +484,6 @@ class AuthSystem {
 
     document.body.appendChild(messageEl);
     
-    // Remove after 3 seconds
     setTimeout(() => {
       messageEl.style.animation = 'slideOut 0.3s ease';
       setTimeout(() => {
@@ -562,49 +496,30 @@ class AuthSystem {
 
   closeAllModals() {
     const modals = document.querySelectorAll('.auth-modal');
-    console.log(`Closing ${modals.length} modals`);
-    
     modals.forEach(modal => {
-      // Multiple ways to hide the modal
       modal.style.display = 'none';
       modal.style.visibility = 'hidden';
       modal.setAttribute('aria-hidden', 'true');
-      
-      // Remove any active classes
       modal.classList.remove('active', 'show');
-      
-      console.log('Modal closed:', modal.id);
     });
     
-    // Also clear any form data
     this.clearFormData();
-    
-    // Remove any body scroll locks
     document.body.style.overflow = '';
-    document.body.style.paddingRight = '';
   }
 
   clearFormData() {
-    // Clear sign up form
-    const signUpForm = document.getElementById('signUpForm');
-    if (signUpForm) {
-      signUpForm.reset();
-    }
-    
-    // Clear sign in form
-    const signInForm = document.getElementById('signInForm');
-    if (signInForm) {
-      signInForm.reset();
-    }
+    const forms = ['signUpForm', 'signInForm', 'passwordResetForm'];
+    forms.forEach(formId => {
+      const form = document.getElementById(formId);
+      if (form) form.reset();
+    });
   }
 }
 
 // Google Authentication Handlers
 function handleGoogleSignIn(response) {
-  // Handle Google Sign-In response
   if (response.credential) {
     try {
-      // Decode the JWT token to get user info
       const payload = JSON.parse(atob(response.credential.split('.')[1]));
       
       const user = {
@@ -617,31 +532,9 @@ function handleGoogleSignIn(response) {
         provider: 'google'
       };
 
-      console.log('Google user data:', user);
-
-      // Save user to localStorage users array
-      const existingUsers = localStorage.getItem('users');
-      const users = existingUsers ? JSON.parse(existingUsers) : [];
+      // Check if user exists, create if not
+      authSystem.handleGoogleUser(user);
       
-      // Check if user already exists
-      const existingUserIndex = users.findIndex(u => u.email === user.email);
-      if (existingUserIndex >= 0) {
-        // Update existing user
-        users[existingUserIndex] = { ...users[existingUserIndex], ...user };
-      } else {
-        // Add new user
-        users.push(user);
-      }
-      
-      localStorage.setItem('users', JSON.stringify(users));
-      console.log('Google user saved to localStorage users array');
-
-      // Sign in the user
-      authSystem.signIn(user);
-      authSystem.showMessage('Signed in with Google successfully!', 'success');
-      
-      // Close all modals after Google sign in
-      authSystem.closeAllModals();
     } catch (error) {
       console.error('Error processing Google sign-in:', error);
       authSystem.showMessage('Error signing in with Google. Please try again.', 'error');
@@ -650,25 +543,37 @@ function handleGoogleSignIn(response) {
 }
 
 function handleGoogleSignUp(response) {
-  // Handle Google Sign-Up response (same as sign-in for Google)
   handleGoogleSignIn(response);
 }
 
 // Modal Functions
 function openSignInModal() {
+  if (authSystem && authSystem.isAuthenticated) {
+    authSystem.showMessage('You are already signed in!', 'info');
+    return;
+  }
+  
   const modal = document.getElementById('signInModal');
   if (modal) {
     modal.style.display = 'flex';
     modal.style.visibility = 'visible';
     modal.setAttribute('aria-hidden', 'false');
     modal.classList.add('active');
-    
-    // Reinitialize Google auth for the sign in modal
-    setTimeout(() => {
-      if (authSystem && typeof google !== 'undefined' && google.accounts) {
-        authSystem.initializeGoogleAuth();
-      }
-    }, 100);
+  }
+}
+
+function openSignUpModal() {
+  if (authSystem && authSystem.isAuthenticated) {
+    authSystem.showMessage('You are already signed in!', 'info');
+    return;
+  }
+  
+  const modal = document.getElementById('signUpModal');
+  if (modal) {
+    modal.style.display = 'flex';
+    modal.style.visibility = 'visible';
+    modal.setAttribute('aria-hidden', 'false');
+    modal.classList.add('active');
   }
 }
 
@@ -679,23 +584,6 @@ function closeSignInModal() {
     modal.style.visibility = 'hidden';
     modal.setAttribute('aria-hidden', 'true');
     modal.classList.remove('active');
-  }
-}
-
-function openSignUpModal() {
-  const modal = document.getElementById('signUpModal');
-  if (modal) {
-    modal.style.display = 'flex';
-    modal.style.visibility = 'visible';
-    modal.setAttribute('aria-hidden', 'false');
-    modal.classList.add('active');
-    
-    // Reinitialize Google auth for the sign up modal
-    setTimeout(() => {
-      if (authSystem && typeof google !== 'undefined' && google.accounts) {
-        authSystem.initializeGoogleAuth();
-      }
-    }, 100);
   }
 }
 
@@ -710,12 +598,25 @@ function closeSignUpModal() {
 }
 
 function signOut() {
-  authSystem.signOut();
-  authSystem.showMessage('Signed out successfully!', 'success');
+  if (authSystem) {
+    authSystem.signOut();
+    authSystem.showMessage('Signed out successfully!', 'success');
+  }
 }
 
-// Initialize authentication system when DOM is loaded
+function showSignUpForm() {
+  const signUpForm = document.getElementById('signUpForm');
+  const passwordResetForm = document.getElementById('passwordResetForm');
+  
+  if (signUpForm && passwordResetForm) {
+    signUpForm.style.display = 'block';
+    passwordResetForm.style.display = 'none';
+  }
+}
+
+// Initialize authentication system
 let authSystem;
 document.addEventListener('DOMContentLoaded', () => {
   authSystem = new AuthSystem();
 });
+

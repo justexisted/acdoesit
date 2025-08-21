@@ -99,6 +99,16 @@
                 </div>
                 
                 <div id="g_id_signin_signup" class="google-signin-btn"></div>
+                
+                <!-- Password Reset Form (initially hidden) -->
+                <form id="passwordResetForm" class="auth-form" style="display: none;">
+                    <div class="form-group">
+                        <label for="resetEmail">Email Address</label>
+                        <input type="email" id="resetEmail" name="email" required>
+                    </div>
+                    <button type="submit" class="auth-submit-btn">Send Password Reset</button>
+                    <button type="button" class="auth-back-btn" onclick="showSignUpForm()">← Back to Sign Up</button>
+                </form>
             </div>
         </div>
     </div>
