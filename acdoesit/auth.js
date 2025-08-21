@@ -413,15 +413,23 @@ class AuthSystem {
   }
 
   async signIn(user) {
-    this.currentUser = user;
+    // Avoid keeping password in memory
+    const sanitizedUser = { ...user };
+    if (sanitizedUser.password) delete sanitizedUser.password;
+    this.currentUser = sanitizedUser;
     this.isAuthenticated = true;
     
     // Store session in database (not just localStorage)
-    const updated = await this.updateUserSession(user);
-    // Persist session identifier locally for cross-page checks
-    if (updated) {
-      try { localStorage.setItem('sessionUserId', user.id); } catch (e) {}
-    }
+    const updated = await this.updateUserSession(sanitizedUser);
+    // Create/refresh cookie-based session and persist session id locally regardless of update outcome
+    try {
+      await fetch('/.netlify/functions/create-session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: sanitizedUser.id, email: sanitizedUser.email || '' })
+      });
+    } catch (e) {}
+    try { localStorage.setItem('sessionUserId', sanitizedUser.id); } catch (e) {}
     
     // Update UI
     this.updateAuthUI();
