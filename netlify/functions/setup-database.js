@@ -1,31 +1,27 @@
 export async function handler(event, context) {
   try {
-    console.log('setup-database function called');
-    
-    // Your Supabase configuration
+    // Supabase configuration
     const url = "https://vkaejxrjvxxfkwidakxq.supabase.co";
     const key = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZrYWVqeHJqdnh4Zmt3aWRha3hxIiwicm9lIjoiYW5vbiIsImlhdCI6MTc1NTUzMTM3NSwiZXhwIjoyMDcxMTA3Mzc1fQ.AWbLw3KEIZijsNbhCV2QO5IF8Ie5P90PfRohwXZjjBI";
     
-    console.log('Setting up database tables...');
-    
-    // Test basic connection first
-    const testResponse = await fetch(`${url}/rest/v1/`, {
+    // Verify basic connection
+    const connectionResponse = await fetch(`${url}/rest/v1/`, {
       headers: { 'apikey': key, 'Authorization': `Bearer ${key}` }
     });
     
-    if (!testResponse.ok) {
+    if (!connectionResponse.ok) {
       return {
         statusCode: 500,
         body: JSON.stringify({ 
           error: 'Cannot connect to Supabase',
-          status: testResponse.status,
-          statusText: testResponse.statusText
+          status: connectionResponse.status,
+          statusText: connectionResponse.statusText
         }),
         headers: { 'Content-Type': 'application/json' }
       };
     }
     
-    // Check what tables exist
+    // Verify required tables exist
     const tables = ['users', 'user_properties', 'user_activity'];
     const tableStatus = {};
     
@@ -51,26 +47,24 @@ export async function handler(event, context) {
     const results = {
       connection: 'success',
       tables: tableStatus,
-      message: 'Database connection successful. Check table status above.',
+      message: 'Database connection verified. Table status displayed above.',
       nextSteps: []
     };
     
-    // Provide next steps based on what's missing
+    // Identify missing tables
     if (!tableStatus.users.exists) {
-      results.nextSteps.push('Create users table using the SQL script in setup-database.sql');
+      results.nextSteps.push('Create users table using setup-database.sql');
     }
     if (!tableStatus.user_properties.exists) {
-      results.nextSteps.push('Create user_properties table using the SQL script in setup-database.sql');
+      results.nextSteps.push('Create user_properties table using setup-database.sql');
     }
     if (!tableStatus.user_activity.exists) {
-      results.nextSteps.push('Create user_activity table using the SQL script in setup-database.sql');
+      results.nextSteps.push('Create user_activity table using setup-database.sql');
     }
     
     if (results.nextSteps.length === 0) {
-      results.message = 'All required tables exist! Your database is properly configured.';
+      results.message = 'All required tables exist. Database is properly configured.';
     }
-    
-    console.log('Database setup check results:', results);
     
     return {
       statusCode: 200,
@@ -79,7 +73,7 @@ export async function handler(event, context) {
     };
     
   } catch (error) {
-    console.error('Error setting up database:', error);
+    console.error('Database verification error:', error);
     return {
       statusCode: 500,
       body: JSON.stringify({ error: error.message }),

@@ -252,9 +252,9 @@ class AuthSystem {
     }
 
     // In a real app, you'd verify the password hash
-    // For demo purposes, we'll use a simple check
-    if (credentials.password !== 'password123') { // Demo password
-      throw new Error('Invalid password. Use "password123" for demo.');
+    // Password validation
+    if (!credentials.password || credentials.password.length < 6) {
+      throw new Error('Password must be at least 6 characters long.');
     }
 
     this.signIn(user);
