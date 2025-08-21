@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
+  <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AI Prompt Builder - San Diego Real Estate</title>
@@ -260,6 +260,30 @@
             margin-right: 8px;
             accent-color: var(--accent, #3b82f6);
             cursor: pointer;
+            /* Ensure checkmarks are visible */
+            appearance: auto;
+            -webkit-appearance: auto;
+            -moz-appearance: auto;
+            border: 2px solid #d1d5db;
+            border-radius: 4px;
+            background: white;
+            position: relative;
+        }
+
+        .checkbox-label input[type="checkbox"]:checked {
+            background: var(--accent, #3b82f6);
+            border-color: var(--accent, #3b82f6);
+        }
+
+        .checkbox-label input[type="checkbox"]:checked::after {
+            content: '✓';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-size: 14px;
+            font-weight: bold;
         }
 
         .checkbox-text {
@@ -524,8 +548,8 @@
             background: #dc2626;
         }
     </style>
-</head>
-<body>
+  </head>
+  <body>
     <div class="ai-prompt-builder">
         <!-- Authentication Required Message -->
         <div id="auth-required" class="auth-required">
@@ -547,7 +571,7 @@
                 </div>
             </div>
 
-            <div class="nav-row">
+        <div class="nav-row">
                 <a href="../index.html" class="back-btn">← Back</a>
             </div>
 
@@ -556,8 +580,8 @@
                 <h3>💾 Saved Properties</h3>
                 <div class="property-list" id="property-list">
                     <!-- Saved properties will be displayed here -->
-                </div>
-            </div>
+        </div>
+      </div>
 
             <div class="module-picker" id="module-picker">
                 <button class="module-btn active" data-module="listing">📝 Property Listing</button>
@@ -565,16 +589,16 @@
                 <button class="module-btn" data-module="zoning">🏗️ Zoning Research</button>
                 <button class="module-btn" data-module="staging">🎨 Home Staging</button>
                 <button class="module-btn" data-module="calendar">📅 Content Calendar</button>
-            </div>
+        </div>
 
             <div class="template-selector" id="template-selector">
                 <h3>Choose Template:</h3>
-                <div class="template-buttons">
-                    <button class="template-btn active" data-template="full">Full Description</button>
+          <div class="template-buttons">
+            <button class="template-btn active" data-template="full">Full Description</button>
                     <button class="template-btn" data-template="zillow">Zillow Optimized</button>
                     <button class="template-btn" data-template="instagram">Instagram Post</button>
-                </div>
-            </div>
+          </div>
+        </div>
 
             <div class="form-container">
                 <div class="module-form">
@@ -587,7 +611,7 @@
                         <button id="generate-btn" class="btn">🚀 Generate Prompt</button>
                         <button id="save-property-btn" class="btn btn-secondary">💾 Save Property</button>
                     </div>
-                </div>
+        </div>
 
                 <div class="preview-container" id="preview-container" style="display: none;">
                     <h3>✨ Generated Prompt</h3>
@@ -600,7 +624,7 @@
                 </div>
             </div>
         </div>
-    </div>
+      </div>
 
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     <script src="../auth.js"></script>
@@ -640,5 +664,5 @@
             checkAuthAndShowContent();
         });
     </script>
-</body>
+  </body>
 </html>

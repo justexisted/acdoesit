@@ -6,16 +6,16 @@ document.addEventListener('DOMContentLoaded', () => {
   const loginContainer = document.getElementById('loginContainer');
   const dashboardContainer = document.getElementById('dashboardContainer');
   const loginError = document.getElementById('loginError');
-  const logoutBtn = document.getElementById('logoutBtn');
+    const logoutBtn = document.getElementById('logoutBtn');
   
   const errorEl = document.getElementById('error');
   const successEl = document.getElementById('success');
   const loadingEl = document.getElementById('loading');
   const statsOverview = document.getElementById('statsOverview');
   const tabNavigation = document.getElementById('tabNavigation');
-  const controls = document.getElementById('controls');
-  const refreshBtn = document.getElementById('refreshBtn');
-  const exportBtn = document.getElementById('exportBtn');
+    const controls = document.getElementById('controls');
+    const refreshBtn = document.getElementById('refreshBtn');
+    const exportBtn = document.getElementById('exportBtn');
   const lastUpdatedEl = document.getElementById('lastUpdated');
   
   // Table elements
@@ -186,16 +186,16 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // Utility functions
-  const setError = (msg) => {
+    const setError = (msg) => {
     if (!msg) { 
       errorEl.classList.add('hidden'); 
       errorEl.textContent = ''; 
       return; 
     }
-    errorEl.textContent = msg;
-    errorEl.classList.remove('hidden');
-  };
-
+      errorEl.textContent = msg;
+      errorEl.classList.remove('hidden');
+    };
+  
   const setSuccess = (msg) => {
     if (!msg) { 
       successEl.classList.add('hidden'); 
@@ -499,7 +499,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // Render bookings table
   function renderBookingsTable(data) {
     const tbody = bookingsTable.querySelector('tbody');
-    tbody.innerHTML = '';
+      tbody.innerHTML = '';
     
     // For now, we'll show users who have requested appointments
     // In the future, this could be connected to a real booking system
@@ -513,7 +513,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     usersWithActivity.forEach(user => {
-      const tr = document.createElement('tr');
+        const tr = document.createElement('tr');
       
       const cells = [
         `${user.first_name} ${user.last_name}`,
@@ -532,8 +532,8 @@ document.addEventListener('DOMContentLoaded', () => {
         tr.appendChild(td); 
       });
       
-      tbody.appendChild(tr);
-    });
+        tbody.appendChild(tr);
+      });
   }
 
   // Switch tabs
@@ -660,8 +660,8 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // Export CSV function
-  function toCSV(rows) {
-    const esc = (v) => '"' + String(v ?? '').replace(/"/g,'""') + '"';
+    function toCSV(rows) {
+      const esc = (v) => '"' + String(v ?? '').replace(/"/g,'""') + '"';
     
     let headers, lines;
     
@@ -705,10 +705,10 @@ document.addEventListener('DOMContentLoaded', () => {
       // Bookings CSV logic would go here
     }
     
-    return lines.join('\n');
-  }
-
-  async function exportCSV() {
+      return lines.join('\n');
+    }
+  
+    async function exportCSV() {
     try {
       const dataToExport = filteredData.length > 0 ? filteredData : currentData;
       const csv = toCSV(dataToExport);
@@ -800,7 +800,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Event listeners
   refreshBtn.addEventListener('click', fetchUserAnalytics);
-  exportBtn.addEventListener('click', exportCSV);
+    exportBtn.addEventListener('click', exportCSV);
   
   // Add test users button
   const addTestUsersBtn = document.getElementById('addTestUsersBtn');
@@ -852,4 +852,4 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Initialize authentication check
   checkAuthStatus();
-});
+  });
