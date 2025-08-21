@@ -77,8 +77,8 @@ export async function handler(event, context) {
 
     if (!insertResponse.ok) {
       const errorText = await insertResponse.text();
-      console.error('Failed to insert user:', errorText);
-      return { statusCode: 502, body: `Failed to insert user: ${errorText}` };
+      console.error('Failed to insert user:', insertResponse.status, errorText);
+      return { statusCode: 502, body: JSON.stringify({ error: 'Insert failed', status: insertResponse.status, details: errorText }) };
     }
 
     console.log('User saved successfully to database');
@@ -102,6 +102,6 @@ export async function handler(event, context) {
 
   } catch (error) {
     console.error('Error saving user:', error);
-    return { statusCode: 500, body: `Internal server error: ${error.message}` };
+    return { statusCode: 500, body: JSON.stringify({ error: 'Internal server error', details: error.message }) };
   }
 }

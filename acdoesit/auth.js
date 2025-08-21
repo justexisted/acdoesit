@@ -277,6 +277,9 @@ class AuthSystem {
       });
 
       if (!response.ok) {
+        let text = '';
+        try { text = await response.text(); } catch (e) {}
+        console.error('save-user failed:', response.status, text);
         throw new Error('Failed to create account');
       }
 
