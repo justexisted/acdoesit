@@ -396,7 +396,7 @@ input:focus, textarea:focus { outline: none; box-shadow: 0 0 0 6px var(--ring); 
 .auth-right {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 15px;
   right: 15px;
 }
 
