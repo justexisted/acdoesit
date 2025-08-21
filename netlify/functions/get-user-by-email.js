@@ -1,6 +1,8 @@
 export async function handler(event, context) {
   try {
+    console.log('get-user-by-email function called');
     const { email } = JSON.parse(event.body || '{}');
+    console.log('Looking for user with email:', email);
     
     if (!email) {
       return { statusCode: 400, body: 'Email is required' };
@@ -23,15 +25,18 @@ export async function handler(event, context) {
     }
 
     const users = await response.json();
+    console.log('Found users:', users);
     
     if (users && users.length > 0) {
       const user = users[0];
+      console.log('Returning user:', user);
       return {
         statusCode: 200,
         body: JSON.stringify({ user }),
         headers: { 'Content-Type': 'application/json' }
       };
     } else {
+      console.log('No users found with email:', email);
       return {
         statusCode: 404,
         body: JSON.stringify({ message: 'User not found' }),

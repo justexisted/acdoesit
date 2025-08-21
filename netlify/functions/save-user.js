@@ -28,8 +28,10 @@ export async function handler(event, context) {
       first_name: userData.firstName || userData.first_name,
       last_name: userData.lastName || userData.last_name,
       email: userData.email,
+      password: userData.password, // Include password for email users
       provider: userData.provider || 'email',
-      created_at: userData.createdAt || userData.created_at || new Date().toISOString()
+      created_at: userData.createdAt || userData.created_at || new Date().toISOString(),
+      last_login: new Date().toISOString() // Set initial last_login for new users
     };
 
     console.log('Prepared user data for database:', dbUserData);
@@ -97,6 +99,7 @@ export async function handler(event, context) {
     }
 
     console.log('User saved successfully to database');
+    console.log('Final user data saved:', dbUserData);
     return { statusCode: 200, body: JSON.stringify({ success: true, action: 'created' }) };
 
   } catch (error) {

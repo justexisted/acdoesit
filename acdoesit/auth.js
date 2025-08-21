@@ -203,15 +203,35 @@ class AuthSystem {
 
   async checkUserExists(email) {
     try {
+      console.log('Checking if user exists:', email);
       const response = await fetch('/.netlify/functions/get-user-by-email', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email })
       });
 
+      console.log('get-user-by-email response status:', response.status);
+      
       if (response.ok) {
         const data = await response.json();
-        return data.user;
+        console.log('get-user-by-email response data:', data);
+        if (data.user) {
+          // Map database fields to frontend fields
+          const mappedUser = {
+            id: data.user.id,
+            firstName: data.user.first_name || data.user.firstName,
+            lastName: data.user.last_name || data.user.lastName,
+            email: data.user.email,
+            provider: data.user.provider,
+            password: data.user.password,
+            createdAt: data.user.created_at || data.user.createdAt,
+            lastLogin: data.user.last_login || data.user.lastLogin
+          };
+          console.log('Mapped user data:', mappedUser);
+          return mappedUser;
+        }
+      } else {
+        console.log('get-user-by-email response not ok:', response.status);
       }
       return null;
     } catch (error) {
@@ -417,18 +437,38 @@ class AuthSystem {
 
   async checkDatabaseSession() {
     try {
+      console.log('Checking database session...');
       const response = await fetch('/.netlify/functions/check-session', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' }
       });
 
+      console.log('check-session response status:', response.status);
+      
       if (response.ok) {
         const data = await response.json();
-        if (data.user) {
-          this.currentUser = data.user;
-          this.isAuthenticated = true;
-          this.updateAuthUI();
-        }
+        console.log('check-session response data:', data);
+              if (data.user) {
+        console.log('User found in database session:', data.user);
+        // Map database fields to frontend fields
+        this.currentUser = {
+          id: data.user.id,
+          firstName: data.user.first_name || data.user.firstName,
+          lastName: data.user.last_name || data.user.lastName,
+          email: data.user.email,
+          provider: data.user.provider,
+          password: data.user.password,
+          createdAt: data.user.created_at || data.user.createdAt,
+          lastLogin: data.user.last_login || data.user.lastLogin
+        };
+        console.log('Mapped user data:', this.currentUser);
+        this.isAuthenticated = true;
+        this.updateAuthUI();
+      } else {
+        console.log('No user found in database session');
+      }
+      } else {
+        console.log('check-session response not ok:', response.status);
       }
     } catch (error) {
       console.error('Error checking database session:', error);
@@ -436,17 +476,23 @@ class AuthSystem {
   }
 
   updateAuthUI() {
+    console.log('updateAuthUI called - isAuthenticated:', this.isAuthenticated, 'currentUser:', this.currentUser);
+    
     const authButtons = document.getElementById('auth-buttons');
     const userStatus = document.getElementById('user-status');
     const userFirstName = document.getElementById('user-first-name');
     const aiPromptBuilderSection = document.getElementById('ai-prompt-builder-section');
 
+    console.log('Found elements:', { authButtons: !!authButtons, userStatus: !!userStatus, userFirstName: !!userFirstName, aiPromptBuilderSection: !!aiPromptBuilderSection });
+
     if (this.isAuthenticated && this.currentUser) {
+      console.log('User is authenticated, showing AI Prompt Builder button');
       if (authButtons) authButtons.style.display = 'none';
       if (userStatus) userStatus.style.display = 'flex';
       if (userFirstName) userFirstName.textContent = this.currentUser.firstName;
       if (aiPromptBuilderSection) aiPromptBuilderSection.style.display = 'block';
     } else {
+      console.log('User is not authenticated, hiding AI Prompt Builder button');
       if (authButtons) authButtons.style.display = 'flex';
       if (userStatus) userStatus.style.display = 'none';
       if (aiPromptBuilderSection) aiPromptBuilderSection.style.display = 'none';
