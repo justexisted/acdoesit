@@ -143,16 +143,17 @@ document.addEventListener('DOMContentLoaded', () => {
   const manualGoogleSignInBtn = document.getElementById('manualGoogleSignIn');
   if (manualGoogleSignInBtn) {
     manualGoogleSignInBtn.addEventListener('click', () => {
-      // For now, simulate Google sign-in with admin email
-      // In production, you'd integrate with Google OAuth properly
-      const mockResponse = {
-        credential: 'mock.jwt.token.' + btoa(JSON.stringify({
-          email: ADMIN_EMAIL,
-          name: 'Admin User',
-          picture: ''
-        }))
-      };
-      handleAdminGoogleSignIn(mockResponse);
+      // Direct admin access without JWT decoding
+      console.log('Manual admin sign-in clicked');
+      
+      // Store admin session directly
+      localStorage.setItem('adminAuthToken', ADMIN_EMAIL);
+      localStorage.setItem('adminName', 'Admin User');
+      localStorage.setItem('adminPicture', '');
+      
+      isAuthenticated = true;
+      showDashboard();
+      hideLoginError();
     });
   }
 
