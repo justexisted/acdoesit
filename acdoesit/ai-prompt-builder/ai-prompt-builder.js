@@ -155,9 +155,22 @@ document.addEventListener("DOMContentLoaded", () => {
         
         // Update the saved properties array
         savedProperties = properties.map(prop => ({
-          ...prop,
+          // Map database snake_case fields to frontend camelCase fields
+          id: prop.id,
+          userId: prop.user_id,
+          propertyName: prop.property_name,
+          address: prop.address,
+          neighborhood: prop.neighborhood,
+          propertyType: prop.property_type,
+          targetAudience: prop.target_audience,
+          uniqueFeatures: prop.unique_features,
+          module: prop.module,
+          createdAt: prop.created_at,
+          // Keep the original form data for populating forms
           formData: prop.form_data || {}
         }));
+        
+        console.log('Mapped saved properties:', savedProperties);
         
         // Display the properties
         displaySavedProperties();
@@ -192,6 +205,7 @@ document.addEventListener("DOMContentLoaded", () => {
         propertyType: values.Property_Type || '',
         targetAudience: values.Target_Audience || '',
         uniqueFeatures: values.Unique_Features || '',
+        module: activeModule,
         formData: values
       };
 
@@ -257,9 +271,14 @@ document.addEventListener("DOMContentLoaded", () => {
       const propertyEl = document.createElement('div');
       propertyEl.className = 'property-item';
       
-      const address = property.Property_Address || property.Parcel_Address_or_APN || 'No Address';
-      const neighborhood = property.Neighborhood || 'No Neighborhood';
-      const propertyType = property.Property_Type || 'Unknown Type';
+      // Use the new field names from the database
+      const address = property.address || property.Property_Address || property.Parcel_Address_or_APN || 'No Address';
+      const neighborhood = property.neighborhood || property.Neighborhood || 'No Neighborhood';
+      const propertyType = property.propertyType || property.Property_Type || 'Unknown Type';
+      const savedDate = property.createdAt || property.created_at || property.savedAt || new Date();
+      
+      console.log('Displaying property:', property);
+      console.log('Address:', address, 'Neighborhood:', neighborhood, 'Type:', propertyType, 'Date:', savedDate);
       
       propertyEl.innerHTML = `
         <div class="property-header">
@@ -270,8 +289,8 @@ document.addEventListener("DOMContentLoaded", () => {
         </div>
         <div class="property-details">
           <strong>Neighborhood:</strong> ${neighborhood}<br>
-          <strong>Module:</strong> ${property.module}<br>
-          <strong>Saved:</strong> ${new Date(property.savedAt).toLocaleDateString()}
+          <strong>Module:</strong> ${property.module || 'Unknown'}<br>
+          <strong>Saved:</strong> ${new Date(savedDate).toLocaleDateString()}
         </div>
         <div class="property-actions">
           <button class="property-btn property-btn-primary" onclick="loadProperty(${index})">📝 Load Property</button>
@@ -327,18 +346,30 @@ document.addEventListener("DOMContentLoaded", () => {
   function populateFormWithProperty(property) {
     const { fields } = Modules[activeModule];
     
+    // Use formData if available, otherwise fall back to direct property fields
+    const dataSource = property.formData || property;
+    
     fields.forEach(field => {
       const id = `f_${field.key}`;
       const element = document.getElementById(id);
       
-      if (element && property[field.key]) {
+      if (element && dataSource[field.key]) {
         if (field.type === "checkboxes") {
-          const values = property[field.key].split(', ');
-          document.querySelectorAll(`input[name="${id}"]`).forEach(checkbox => {
-            checkbox.checked = values.includes(checkbox.value);
-          });
+          const values = dataSource[field.key];
+          if (Array.isArray(values)) {
+            // Handle array of values
+            document.querySelectorAll(`input[name="${id}"]`).forEach(checkbox => {
+              checkbox.checked = values.includes(checkbox.value);
+            });
+          } else if (typeof values === 'string') {
+            // Handle comma-separated string
+            const valueArray = values.split(', ');
+            document.querySelectorAll(`input[name="${id}"]`).forEach(checkbox => {
+              checkbox.checked = valueArray.includes(checkbox.value);
+            });
+          }
         } else {
-          element.value = property[field.key];
+          element.value = dataSource[field.key];
         }
       }
     });
