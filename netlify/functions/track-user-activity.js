@@ -1,33 +1,28 @@
 export async function handler(event, context) {
-  // Temporarily remove authentication check for testing
-  // if (!context.clientContext || !context.clientContext.user) {
-  //   return { statusCode: 401, body: 'Unauthorized' };
-  // }
-
   try {
-    const { userId, action, details, location, ipAddress, userAgent } = JSON.parse(event.body || '{}');
+    console.log('track-user-activity function called');
+    console.log('Event body:', event.body);
     
-    if (!userId || !action) {
-      return { statusCode: 400, body: 'Missing required fields: userId and action' };
+    const { user_id, action, details, location } = JSON.parse(event.body || '{}');
+    
+    console.log('Parsed data:', { user_id, action, details, location });
+    
+    if (!user_id || !action) {
+      console.log('Missing required fields:', { user_id, action });
+      return { statusCode: 400, body: 'Missing required fields: user_id and action' };
     }
 
-    const url = process.env.SUPABASE_URL;
-    const key = process.env.SUPABASE_SERVICE_ROLE;
-    
-    if (!url || !key) {
-      console.log('Supabase not configured, logging activity locally');
-      return { statusCode: 200, body: JSON.stringify({ success: true, logged: 'locally' }) };
-    }
+    // Your Supabase configuration (same as other functions)
+    const url = "https://vkaejxrjvxxfkwidakxq.supabase.co";
+    const key = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZrYWVqeHJqdnh4Zmt3aWRha3hxIiwicm9lIjoiYW5vbiIsImlhdCI6MTc1NTUzMTM3NSwiZXhwIjoyMDcxMTA3Mzc1fQ.AWbLw3KEIZijsNbhCV2QO5IF8Ie5P90PfRohwXZjjBI";
 
-    // Prepare activity data
+    // Prepare activity data - only include fields that exist in the database schema
     const activityData = {
-      user_id: userId,
+      user_id: user_id,
       action: action,
       details: details || {},
       location: location || {},
-      timestamp: new Date().toISOString(),
-      ip_address: ipAddress || null,
-      user_agent: userAgent || null
+      timestamp: new Date().toISOString()
     };
 
     console.log('Tracking user activity:', {

@@ -100,7 +100,7 @@ document.addEventListener("DOMContentLoaded", () => {
       };
 
       const activityData = {
-        userId: currentUser.id,
+        user_id: currentUser.id,
         action: action,
         details: {
           ...details,
