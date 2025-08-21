@@ -152,19 +152,24 @@ class AuthSystem {
       const firstName = document.getElementById('signUpFirstName').value.trim();
       const lastName = document.getElementById('signUpLastName').value.trim();
       const email = document.getElementById('signUpEmail').value.trim();
+      const password = document.getElementById('signUpPassword').value;
 
       // Validate data
-      if (!firstName || !lastName || !email) {
+      if (!firstName || !lastName || !email || !password) {
         throw new Error('All fields are required');
       }
 
-      const userData = { firstName, lastName, email };
+      if (password.length < 6) {
+        throw new Error('Password must be at least 6 characters long');
+      }
 
-      // Simulate successful signup
-      await this.simulateSignUp(userData);
+      const userData = { firstName, lastName, email, password };
+
+      // Create user account
+      const user = await this.simulateSignUp(userData);
       
-      // Sign in the user first
-      this.signIn(userData);
+      // Sign in the user
+      this.signIn(user);
       
       // Show success message
       this.showMessage('Account created successfully! You now have access to the AI Prompt Builder.', 'success');
@@ -207,57 +212,70 @@ class AuthSystem {
   }
 
   async simulateSignUp(userData) {
-    // Simulate API call delay
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
     // Validate data
-    if (!userData.firstName || !userData.lastName || !userData.email) {
+    if (!userData.firstName || !userData.lastName || !userData.email || !userData.password) {
       throw new Error('All fields are required');
     }
 
-    // Store user data in localStorage (in a real app, this would be in a database)
+    // Create user object
     const user = {
       id: Date.now().toString(),
       firstName: userData.firstName,
       lastName: userData.lastName,
       email: userData.email,
+      password: userData.password, // Store password for future sign-ins
       createdAt: new Date().toISOString(),
       provider: 'email'
     };
 
-    // Get existing users or create empty array
+    // Save user to database first
+    const savedToDb = await this.saveUserToDatabase(user);
+    if (!savedToDb) {
+      throw new Error('Failed to create account. Please try again.');
+    }
+
+    // Also save to localStorage for consistency
     const existingUsers = localStorage.getItem('users');
     const users = existingUsers ? JSON.parse(existingUsers) : [];
-    
-    // Add new user
     users.push(user);
     localStorage.setItem('users', JSON.stringify(users));
+    
+    return user;
   }
 
   async simulateSignIn(credentials) {
-    // Simulate API call delay
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    // Check if user exists
+    // Check if user exists in localStorage first (for quick lookup)
     const existingUsers = localStorage.getItem('users');
-    if (!existingUsers) {
-      throw new Error('User not found. Please sign up first.');
+    let user = null;
+    
+    if (existingUsers) {
+      const users = JSON.parse(existingUsers);
+      user = users.find(u => u.email === credentials.email);
     }
-
-    const users = JSON.parse(existingUsers);
-    const user = users.find(u => u.email === credentials.email);
     
     if (!user) {
       throw new Error('User not found. Please sign up first.');
     }
 
-    // In a real app, you'd verify the password hash
     // Password validation
     if (!credentials.password || credentials.password.length < 6) {
       throw new Error('Password must be at least 6 characters long.');
     }
 
-    this.signIn(user);
+    // Check if password matches
+    if (user.password !== credentials.password) {
+      throw new Error('Invalid password. Please try again.');
+    }
+
+    // Verify user exists in database and get latest data
+    const dbUser = await this.verifyUserInDatabase(user.email);
+    if (dbUser) {
+      // Use database user data (more up-to-date)
+      this.signIn(dbUser);
+    } else {
+      // Fall back to localStorage user
+      this.signIn(user);
+    }
   }
 
   async signIn(user) {
@@ -314,6 +332,29 @@ class AuthSystem {
     } catch (error) {
       console.log('Error saving user to database:', error);
       return false;
+    }
+  }
+
+  async verifyUserInDatabase(email) {
+    try {
+      const response = await fetch('/.netlify/functions/get-user-by-email', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email: email })
+      });
+
+      if (response.ok) {
+        const userData = await response.json();
+        return userData.user || null;
+      } else {
+        console.log('User not found in database:', response.status);
+        return null;
+      }
+    } catch (error) {
+      console.log('Error verifying user in database:', error);
+      return null;
     }
   }
 
