@@ -367,8 +367,6 @@ input:focus, textarea:focus { outline: none; box-shadow: 0 0 0 6px var(--ring); 
 
 .brand { 
   margin-bottom: 16px; 
-  position: absolute;
-  top: 60px;
 }
 
 .ai-prompt-btn {
@@ -377,7 +375,6 @@ input:focus, textarea:focus { outline: none; box-shadow: 0 0 0 6px var(--ring); 
 
 /* Authentication Styles */
 .auth-header {
-  position: absolute;
   top: 0;
   left: 0;
   right: 0;
@@ -397,15 +394,12 @@ input:focus, textarea:focus { outline: none; box-shadow: 0 0 0 6px var(--ring); 
   font-weight: 700;
   font-size: 1.2rem;
   color: var(--accent);
-  position: absolute;
-  left: 15px;
 }
 
 .auth-right {
   display: flex;
   align-items: center;
   gap: 16px;
-  position: absolute;
   right: 15px;
 }
 
