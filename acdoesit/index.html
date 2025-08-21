@@ -55,6 +55,9 @@
                         <label for="signInPassword">Password</label>
                         <input type="password" id="signInPassword" name="password" required>
                     </div>
+                    <div style="margin-top:8px">
+                        <a href="#" onclick="closeSignInModal(); openSignUpModal(); document.getElementById('passwordResetForm').style.display='block'; document.getElementById('signUpForm').style.display='none'; return false;">Forgot password?</a>
+                    </div>
                     <button type="submit" class="auth-submit-btn">Sign In</button>
                 </form>
                 

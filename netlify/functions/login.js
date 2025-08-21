@@ -9,14 +9,24 @@ export async function handler(event) {
 
     const { url, serviceRoleKey } = getSupabaseConfig();
     const resp = await fetch(`${url}/rest/v1/users?email=eq.${encodeURIComponent(email)}&select=*`, { headers: supabaseHeaders(serviceRoleKey) });
-    if (!resp.ok) return { statusCode: 401, body: 'Invalid credentials' };
+    if (!resp.ok) return { statusCode: 401, body: JSON.stringify({ reason: 'not_found' }) };
     const users = await resp.json();
-    if (!Array.isArray(users) || users.length === 0) return { statusCode: 401, body: 'Invalid credentials' };
+    if (!Array.isArray(users) || users.length === 0) return { statusCode: 401, body: JSON.stringify({ reason: 'not_found' }) };
     const user = users[0];
 
-    if (!user.password || !verifyPasswordScrypt(user.password, password)) {
-      return { statusCode: 401, body: 'Invalid credentials' };
+    if (!user.password) {
+      return { statusCode: 401, body: JSON.stringify({ reason: 'no_password' }) };
     }
+    let ok = false;
+    try {
+      if (String(user.password).startsWith('scrypt:')) {
+        ok = verifyPasswordScrypt(user.password, password);
+      } else {
+        // Legacy plaintext compatibility
+        ok = user.password === password;
+      }
+    } catch {}
+    if (!ok) return { statusCode: 401, body: JSON.stringify({ reason: 'bad_password' }) };
 
     // Update last_login
     await fetch(`${url}/rest/v1/users?id=eq.${encodeURIComponent(user.id)}`, {
