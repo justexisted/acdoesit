@@ -272,8 +272,8 @@ input:focus, textarea:focus { outline: none; box-shadow: 0 0 0 6px var(--ring); 
 
 .brand { 
   margin-bottom: 16px; 
-  position: fixed;
-  top: 0;
+  position: aboslute;
+  top: 60px;
 }
 
 .ai-prompt-btn {
