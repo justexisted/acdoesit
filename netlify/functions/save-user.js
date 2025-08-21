@@ -1,3 +1,6 @@
+import { getSupabaseConfig, supabaseHeaders } from './_supabase.js';
+import { hashPasswordScrypt } from './_auth.js';
+
 export async function handler(event, context) {
   try {
     console.log('save-user function called');
@@ -11,9 +14,7 @@ export async function handler(event, context) {
       return { statusCode: 400, body: 'Missing required data: userData with email' };
     }
 
-    // Your Supabase configuration
-    const url = "https://vkaejxrjvxxfkwidakxq.supabase.co";
-    const key = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZrYWVqeHJqdnh4Zmt3aWRha3hxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU1MzEzNzUsImV4cCI6MjA3MTEwNzM3NX0.AWbLw3KEIZijsNbhCV2QO5IF8Ie5P90PfRohwXZjjBI";
+    const { url, serviceRoleKey } = getSupabaseConfig();
     const table = 'users';
     
     console.log('Using Supabase config:', { 
@@ -28,7 +29,7 @@ export async function handler(event, context) {
       first_name: userData.firstName || userData.first_name,
       last_name: userData.lastName || userData.last_name,
       email: userData.email,
-      password: userData.password, // Include password for email users
+      password: userData.password ? hashPasswordScrypt(userData.password) : null,
       provider: userData.provider || 'email',
       created_at: userData.createdAt || userData.created_at || new Date().toISOString(),
       last_login: new Date().toISOString() // Set initial last_login for new users
@@ -37,12 +38,7 @@ export async function handler(event, context) {
     console.log('Prepared user data for database:', dbUserData);
 
     // Check if user already exists
-    const checkResponse = await fetch(`${url}/rest/v1/${table}?email=eq.${encodeURIComponent(dbUserData.email)}`, {
-      headers: { 
-        'apikey': key, 
-        'Authorization': `Bearer ${key}` 
-      }
-    });
+    const checkResponse = await fetch(`${url}/rest/v1/${table}?email=eq.${encodeURIComponent(dbUserData.email)}`, { headers: supabaseHeaders(serviceRoleKey) });
 
     if (checkResponse.ok) {
       const existingUsers = await checkResponse.json();
@@ -52,12 +48,7 @@ export async function handler(event, context) {
         // Update existing user
         const updateResponse = await fetch(`${url}/rest/v1/${table}?email=eq.${encodeURIComponent(dbUserData.email)}`, {
           method: 'PATCH',
-          headers: { 
-            'apikey': key, 
-            'Authorization': `Bearer ${key}`, 
-            'Content-Type': 'application/json',
-            'Prefer': 'return=minimal'
-          },
+          headers: { ...supabaseHeaders(serviceRoleKey), 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
           body: JSON.stringify({
             first_name: dbUserData.first_name,
             last_name: dbUserData.last_name,
@@ -80,12 +71,7 @@ export async function handler(event, context) {
     // Insert new user
     const insertResponse = await fetch(`${url}/rest/v1/${table}`, {
       method: 'POST',
-      headers: { 
-        'apikey': key, 
-        'Authorization': `Bearer ${key}`, 
-        'Content-Type': 'application/json',
-        'Prefer': 'return=minimal'
-      },
+      headers: { ...supabaseHeaders(serviceRoleKey), 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
       body: JSON.stringify(dbUserData)
     });
 
