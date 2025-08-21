@@ -1,3 +1,5 @@
+import { getSupabaseConfig, supabaseHeaders } from './_supabase.js';
+
 export async function handler(event, context) {
   try {
     console.log('check-session function called');
@@ -6,8 +8,7 @@ export async function handler(event, context) {
     // In production, you'd implement proper JWT token validation
     
     // Check if user has recent activity (within last 24 hours)
-    const url = "https://vkaejxrjvxxfkwidakxq.supabase.co";
-    const key = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZrYWVqeHJqdnh4Zmt3aWRha3hxIiwicm9lIjoiYW5vbiIsImlhdCI6MTc1NTUzMTM3NSwiZXhwIjoyMDcxMTA3Mzc1fQ.AWbLw3KEIZijsNbhCV2QO5IF8Ie5P90PfRohwXZjjBI";
+    const { url, serviceRoleKey } = getSupabaseConfig();
     
     // Get users with recent login activity OR recently created users (within last 24 hours)
     const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
@@ -16,12 +17,7 @@ export async function handler(event, context) {
     console.log('Checking for users with recent login activity...');
     console.log('Looking for users with last_login >=', twentyFourHoursAgo);
     
-    let response = await fetch(`${url}/rest/v1/users?last_login=gte.${twentyFourHoursAgo}&select=*&order=last_login.desc&limit=1`, {
-      headers: {
-        'apikey': key,
-        'Authorization': `Bearer ${key}`
-      }
-    });
+    let response = await fetch(`${url}/rest/v1/users?last_login=gte.${twentyFourHoursAgo}&select=*&order=last_login.desc&limit=1`, { headers: supabaseHeaders(serviceRoleKey) });
 
     console.log('Response status for last_login query:', response.status);
     
@@ -45,12 +41,7 @@ export async function handler(event, context) {
     console.log('Checking for recently created users...');
     console.log('Looking for users with created_at >=', twentyFourHoursAgo);
     
-    response = await fetch(`${url}/rest/v1/users?created_at=gte.${twentyFourHoursAgo}&select=*&order=created_at.desc&limit=1`, {
-      headers: {
-        'apikey': key,
-        'Authorization': `Bearer ${key}`
-      }
-    });
+    response = await fetch(`${url}/rest/v1/users?created_at=gte.${twentyFourHoursAgo}&select=*&order=created_at.desc&limit=1`, { headers: supabaseHeaders(serviceRoleKey) });
 
     console.log('Response status for created_at query:', response.status);
     
@@ -78,12 +69,7 @@ export async function handler(event, context) {
 
     // If no recent users found, let's check all users and return the most recent one
     console.log('No recent users found, checking all users...');
-    const allUsersResponse = await fetch(`${url}/rest/v1/users?select=*&order=created_at.desc&limit=1`, {
-      headers: {
-        'apikey': key,
-        'Authorization': `Bearer ${key}`
-      }
-    });
+    const allUsersResponse = await fetch(`${url}/rest/v1/users?select=*&order=created_at.desc&limit=1`, { headers: supabaseHeaders(serviceRoleKey) });
     
     if (allUsersResponse.ok) {
       const allUsers = await allUsersResponse.json();

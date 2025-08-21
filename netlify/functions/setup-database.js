@@ -1,13 +1,11 @@
+import { getSupabaseConfig, supabaseHeaders } from './_supabase.js';
+
 export async function handler(event, context) {
   try {
-    // Supabase configuration
-    const url = "https://vkaejxrjvxxfkwidakxq.supabase.co";
-    const key = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZrYWVqeHJqdnh4Zmt3aWRha3hxIiwicm9lIjoiYW5vbiIsImlhdCI6MTc1NTUzMTM3NSwiZXhwIjoyMDcxMTA3Mzc1fQ.AWbLw3KEIZijsNbhCV2QO5IF8Ie5P90PfRohwXZjjBI";
+    const { url, serviceRoleKey } = getSupabaseConfig();
     
     // Verify basic connection
-    const connectionResponse = await fetch(`${url}/rest/v1/`, {
-      headers: { 'apikey': key, 'Authorization': `Bearer ${key}` }
-    });
+    const connectionResponse = await fetch(`${url}/rest/v1/`, { headers: supabaseHeaders(serviceRoleKey) });
     
     if (!connectionResponse.ok) {
       return {
@@ -27,9 +25,7 @@ export async function handler(event, context) {
     
     for (const table of tables) {
       try {
-        const response = await fetch(`${url}/rest/v1/${table}?select=id&limit=1`, {
-          headers: { 'apikey': key, 'Authorization': `Bearer ${key}` }
-        });
+        const response = await fetch(`${url}/rest/v1/${table}?select=id&limit=1`, { headers: supabaseHeaders(serviceRoleKey) });
         
         tableStatus[table] = {
           exists: response.ok,

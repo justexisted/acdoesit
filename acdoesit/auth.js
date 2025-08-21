@@ -558,6 +558,13 @@ class AuthSystem {
   closeAllModals() {
     const modals = document.querySelectorAll('.auth-modal');
     modals.forEach(modal => {
+      // Move focus out if it is inside the modal to avoid hiding a focused element
+      if (modal.contains(document.activeElement)) {
+        try { document.activeElement.blur(); } catch (e) {}
+        if (typeof modal.setAttribute === 'function') {
+          // Optional: mark modal inert while hidden; remove on show elsewhere if implemented
+        }
+      }
       modal.style.display = 'none';
       modal.style.visibility = 'hidden';
       modal.setAttribute('aria-hidden', 'true');

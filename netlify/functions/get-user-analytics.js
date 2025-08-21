@@ -1,20 +1,16 @@
+import { getSupabaseConfig, supabaseHeaders } from './_supabase.js';
+
 export async function handler(event, context) {
   try {
     console.log('get-user-analytics function called');
-    
-    // Your Supabase configuration
-    const url = "https://vkaejxrjvxxfkwidakxq.supabase.co";
-    const key = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZrYWVqeHJqdnh4Zmt3aWRha3hxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU1MzEzNzUsImV4cCI6MjA3MTEwNzM3NX0.AWbLw3KEIZijsNbhCV2QO5IF8Ie5P90PfRohwXZjjBI";
-    
-    console.log('Using Supabase config:', { url: url, key: key ? 'configured' : 'missing' });
+    const { url, serviceRoleKey } = getSupabaseConfig();
+    console.log('Using Supabase config:', { url: url, key: serviceRoleKey ? 'configured' : 'missing' });
     
     // Fetch users from 'users' table
     let users = [];
     try {
       console.log('Fetching users from users table...');
-      const usersResponse = await fetch(`${url}/rest/v1/users?select=*&order=created_at.desc`, {
-        headers: { 'apikey': key, 'Authorization': `Bearer ${key}` }
-      });
+      const usersResponse = await fetch(`${url}/rest/v1/users?select=*&order=created_at.desc`, { headers: supabaseHeaders(serviceRoleKey) });
       
       console.log('Users response status:', usersResponse.status);
       
@@ -42,9 +38,7 @@ export async function handler(event, context) {
     let activities = [];
     try {
       console.log('Fetching activities from user_activity table...');
-      const activitiesResponse = await fetch(`${url}/rest/v1/user_activity?select=*&order=timestamp.desc`, {
-        headers: { 'apikey': key, 'Authorization': `Bearer ${key}` }
-      });
+      const activitiesResponse = await fetch(`${url}/rest/v1/user_activity?select=*&order=timestamp.desc`, { headers: supabaseHeaders(serviceRoleKey) });
       
       if (activitiesResponse.ok) {
         activities = await activitiesResponse.json();
@@ -60,9 +54,7 @@ export async function handler(event, context) {
     let properties = [];
     try {
       console.log('Fetching properties from user_properties table...');
-      const propertiesResponse = await fetch(`${url}/rest/v1/user_properties?select=*&order=created_at.desc`, {
-        headers: { 'apikey': key, 'Authorization': `Bearer ${key}` }
-      });
+      const propertiesResponse = await fetch(`${url}/rest/v1/user_properties?select=*&order=created_at.desc`, { headers: supabaseHeaders(serviceRoleKey) });
       
       if (propertiesResponse.ok) {
         properties = await propertiesResponse.json();

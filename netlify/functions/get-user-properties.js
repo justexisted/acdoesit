@@ -1,3 +1,5 @@
+import { getSupabaseConfig, supabaseHeaders } from './_supabase.js';
+
 export async function handler(event, context) {
   try {
     console.log('get-user-properties function called');
@@ -8,9 +10,7 @@ export async function handler(event, context) {
       return { statusCode: 400, body: 'Missing required field: userId' };
     }
 
-    // Use the user's existing Supabase configuration
-    const url = "https://vkaejxrjvxxfkwidakxq.supabase.co";
-    const key = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZrYWVqeHJqdnh4Zmt3aWRha3hxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU1MzEzNzUsImV4cCI6MjA3MTEwNzM3NX0.AWbLw3KEIZijsNbhCV2QO5IF8Ie5P90PfRohwXZjjBI";
+    const { url, serviceRoleKey } = getSupabaseConfig();
     const table = 'user_properties';
     
     console.log('Fetching properties for user:', userId);
@@ -22,12 +22,7 @@ export async function handler(event, context) {
       order: 'created_at.desc'
     });
     
-    const response = await fetch(`${url}/rest/v1/${table}?${query.toString()}`, {
-      headers: { 
-        apikey: key, 
-        Authorization: `Bearer ${key}` 
-      }
-    });
+    const response = await fetch(`${url}/rest/v1/${table}?${query.toString()}`, { headers: supabaseHeaders(serviceRoleKey) });
 
     if (!response.ok) {
       const errorText = await response.text();

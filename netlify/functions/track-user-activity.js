@@ -1,3 +1,5 @@
+import { getSupabaseConfig, supabaseHeaders } from './_supabase.js';
+
 export async function handler(event, context) {
   try {
     console.log('track-user-activity function called');
@@ -12,9 +14,7 @@ export async function handler(event, context) {
       return { statusCode: 400, body: 'Missing required fields: user_id and action' };
     }
 
-    // Your Supabase configuration (same as other functions)
-    const url = "https://vkaejxrjvxxfkwidakxq.supabase.co";
-    const key = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZrYWVqeHJqdnh4Zmt3aWRha3hxIiwicm9lIjoiYW5vbiIsImlhdCI6MTc1NTUzMTM3NSwiZXhwIjoyMDcxMTA3Mzc1fQ.AWbLw3KEIZijsNbhCV2QO5IF8Ie5P90PfRohwXZjjBI";
+    const { url, serviceRoleKey } = getSupabaseConfig();
 
     // Prepare activity data - only include fields that exist in the database schema
     const activityData = {
@@ -34,12 +34,7 @@ export async function handler(event, context) {
     // Insert into user_activity table
     const response = await fetch(`${url}/rest/v1/user_activity`, {
       method: 'POST',
-      headers: {
-        'apikey': key,
-        'Authorization': `Bearer ${key}`,
-        'Content-Type': 'application/json',
-        'Prefer': 'return=minimal'
-      },
+      headers: { ...supabaseHeaders(serviceRoleKey), 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
       body: JSON.stringify(activityData)
     });
 

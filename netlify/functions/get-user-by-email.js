@@ -1,3 +1,5 @@
+import { getSupabaseConfig, supabaseHeaders } from './_supabase.js';
+
 export async function handler(event, context) {
   try {
     console.log('get-user-by-email function called');
@@ -8,16 +10,11 @@ export async function handler(event, context) {
       return { statusCode: 400, body: 'Email is required' };
     }
 
-    // Supabase configuration
-    const url = "https://vkaejxrjvxxfkwidakxq.supabase.co";
-    const key = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZrYWVqeHJqdnh4Zmt3aWRha3hxIiwicm9lIjoiYW5vbiIsImlhdCI6MTc1NTUzMTM3NSwiZXhwIjoyMDcxMTA3Mzc1fQ.AWbLw3KEIZijsNbhCV2QO5IF8Ie5P90PfRohwXZjjBI";
+    const { url, serviceRoleKey } = getSupabaseConfig();
     
     // Query users table by email
     const response = await fetch(`${url}/rest/v1/users?email=eq.${encodeURIComponent(email)}&select=*`, {
-      headers: {
-        'apikey': key,
-        'Authorization': `Bearer ${key}`
-      }
+      headers: supabaseHeaders(serviceRoleKey)
     });
 
     if (!response.ok) {

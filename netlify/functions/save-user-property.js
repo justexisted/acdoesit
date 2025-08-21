@@ -1,3 +1,5 @@
+import { getSupabaseConfig, supabaseHeaders } from './_supabase.js';
+
 export async function handler(event, context) {
   try {
     console.log('save-user-property function called');
@@ -12,9 +14,7 @@ export async function handler(event, context) {
       return { statusCode: 400, body: 'Missing required data: userId and propertyData' };
     }
 
-    // Your Supabase configuration
-    const url = "https://vkaejxrjvxxfkwidakxq.supabase.co";
-    const key = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZrYWVqeHJqdnh4Zmt3aWRha3hxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU1MzEzNzUsImV4cCI6MjA3MTEwNzM3NX0.AWbLw3KEIZijsNbhCV2QO5IF8Ie5P90PfRohwXZjjBI";
+    const { url, serviceRoleKey } = getSupabaseConfig();
     const table = 'user_properties';
     
     console.log('Using Supabase config:', {
@@ -40,12 +40,7 @@ export async function handler(event, context) {
 
     // First, check if the user exists in the users table
     console.log('Checking if user exists before saving property...');
-    const userCheckResponse = await fetch(`${url}/rest/v1/users?id=eq.${userId}`, {
-      headers: {
-        'apikey': key,
-        'Authorization': `Bearer ${key}`
-      }
-    });
+    const userCheckResponse = await fetch(`${url}/rest/v1/users?id=eq.${userId}`, { headers: supabaseHeaders(serviceRoleKey) });
 
     if (!userCheckResponse.ok) {
       console.log('Failed to check user existence:', userCheckResponse.status, userCheckResponse.statusText);
@@ -63,12 +58,7 @@ export async function handler(event, context) {
     // Insert new property
     const resp = await fetch(`${url}/rest/v1/${table}`, {
       method: 'POST',
-      headers: {
-        'apikey': key,
-        'Authorization': `Bearer ${key}`,
-        'Content-Type': 'application/json',
-        'Prefer': 'return=minimal'
-      },
+      headers: { ...supabaseHeaders(serviceRoleKey), 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
       body: JSON.stringify(dbPropertyData)
     });
 
