@@ -246,12 +246,17 @@
     <script>
         // Function to check authentication status and update UI
         function updatePageForAuthStatus() {
-            const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+            // Wait for auth system to be available
+            if (!window.authSystem) {
+                setTimeout(updatePageForAuthStatus, 100);
+                return;
+            }
+
             const aiPromptBuilderSection = document.getElementById('ai-prompt-builder-section');
             const nonAuthContent = document.getElementById('non-auth-content');
             const authContent = document.getElementById('auth-content');
 
-            if (currentUser && currentUser.firstName) {
+            if (window.authSystem.isAuthenticated && window.authSystem.currentUser) {
                 // User is authenticated
                 if (aiPromptBuilderSection) aiPromptBuilderSection.style.display = 'block';
                 if (nonAuthContent) nonAuthContent.style.display = 'none';
@@ -264,12 +269,28 @@
             }
         }
 
+        // Handle hash links to open modals
+        function handleHashLinks() {
+            const hash = window.location.hash;
+            if (hash === '#signup') {
+                openSignUpModal();
+            } else if (hash === '#signin') {
+                openSignInModal();
+            }
+        }
+
         // Check auth status on page load
-        document.addEventListener('DOMContentLoaded', updatePageForAuthStatus);
+        document.addEventListener('DOMContentLoaded', () => {
+            updatePageForAuthStatus();
+            handleHashLinks();
+        });
 
         // Listen for auth events
         window.addEventListener('userSignedIn', updatePageForAuthStatus);
         window.addEventListener('userSignedOut', updatePageForAuthStatus);
+
+        // Listen for hash changes
+        window.addEventListener('hashchange', handleHashLinks);
     </script>
 </body>
 </html>

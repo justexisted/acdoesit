@@ -8,6 +8,8 @@ class AuthSystem {
 
   init() {
     this.checkAuthStatus();
+    // Always update UI on initialization
+    this.updateAuthUI();
     // Only setup event listeners and Google auth if we're on the main page
     if (document.getElementById('signUpForm') || document.getElementById('signInForm')) {
       this.setupEventListeners();
