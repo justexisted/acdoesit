@@ -76,9 +76,6 @@ img, svg {
 }
 
 /* Add top padding to account for fixed header */
-body {
-  padding-top: 120px;
-}
 
 h1, h2, h3 {
   margin: 0 0 12px 0;
