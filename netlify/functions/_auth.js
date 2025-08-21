@@ -1,5 +1,5 @@
 // Lightweight auth utilities: scrypt password hashing and HS256 JWT
-import crypto from 'crypto';
+import { randomBytes, scryptSync, createHmac, timingSafeEqual } from 'node:crypto';
 
 // Base64url helpers
 function base64UrlEncode(buffer) {
@@ -15,8 +15,8 @@ function base64UrlDecode(str) {
 // Password hashing with scrypt (avoids external deps). Format: scrypt:N:r:p:salt:hash
 export function hashPasswordScrypt(password) {
   const N = 16384, r = 8, p = 1, keyLen = 64;
-  const salt = crypto.randomBytes(16);
-  const hash = crypto.scryptSync(password, salt, keyLen, { N, r, p });
+  const salt = randomBytes(16);
+  const hash = scryptSync(password, salt, keyLen, { N, r, p });
   return `scrypt:${N}:${r}:${p}:${base64UrlEncode(salt)}:${base64UrlEncode(hash)}`;
 }
 
@@ -29,8 +29,8 @@ export function verifyPasswordScrypt(stored, password) {
     const p = parseInt(parts[3], 10);
     const salt = base64UrlDecode(parts[4]);
     const expected = base64UrlDecode(parts[5]);
-    const hash = crypto.scryptSync(password, salt, expected.length, { N, r, p });
-    return crypto.timingSafeEqual(hash, expected);
+    const hash = scryptSync(password, salt, expected.length, { N, r, p });
+    return timingSafeEqual(hash, expected);
   } catch {
     return false;
   }
@@ -46,7 +46,7 @@ export function createJWT(payload, expiresInSeconds = 60 * 60 * 24) {
   const encHeader = base64UrlEncode(JSON.stringify(header));
   const encPayload = base64UrlEncode(JSON.stringify(body));
   const data = `${encHeader}.${encPayload}`;
-  const sig = crypto.createHmac('sha256', secret).update(data).digest();
+  const sig = createHmac('sha256', secret).update(data).digest();
   const encSig = base64UrlEncode(sig);
   return `${data}.${encSig}`;
 }
@@ -58,8 +58,8 @@ export function verifyJWT(token) {
   if (parts.length !== 3) return null;
   const [h, p, s] = parts;
   const data = `${h}.${p}`;
-  const expected = base64UrlEncode(crypto.createHmac('sha256', secret).update(data).digest());
-  if (!crypto.timingSafeEqual(Buffer.from(s), Buffer.from(expected))) return null;
+  const expected = base64UrlEncode(createHmac('sha256', secret).update(data).digest());
+  if (!timingSafeEqual(Buffer.from(s), Buffer.from(expected))) return null;
   const payload = JSON.parse(base64UrlDecode(p).toString('utf8'));
   const now = Math.floor(Date.now() / 1000);
   if (payload.exp && payload.exp < now) return null;
