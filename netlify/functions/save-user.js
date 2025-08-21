@@ -23,16 +23,14 @@ export async function handler(event, context) {
       table: table 
     });
 
-    // Prepare user data for database
+    // Prepare minimal user data for initial insert
     const dbUserData = {
       id: userData.id,
       first_name: userData.firstName || userData.first_name,
       last_name: userData.lastName || userData.last_name,
       email: userData.email,
-      password: userData.password ? hashPasswordScrypt(userData.password) : null,
       provider: userData.provider || 'email',
-      created_at: userData.createdAt || userData.created_at || new Date().toISOString(),
-      last_login: new Date().toISOString() // Set initial last_login for new users
+      created_at: userData.createdAt || userData.created_at || new Date().toISOString()
     };
 
     console.log('Prepared user data for database:', dbUserData);
@@ -76,7 +74,6 @@ export async function handler(event, context) {
     });
 
     console.log('Insert response status:', insertResponse.status);
-    console.log('Insert response headers:', Object.fromEntries(insertResponse.headers.entries()));
 
     if (!insertResponse.ok) {
       const errorText = await insertResponse.text();
@@ -85,6 +82,21 @@ export async function handler(event, context) {
     }
 
     console.log('User saved successfully to database');
+    // If password provided, set it and update last_login
+    if (userData.password) {
+      try {
+        const patch = await fetch(`${url}/rest/v1/${table}?id=eq.${encodeURIComponent(dbUserData.id)}`, {
+          method: 'PATCH',
+          headers: { ...supabaseHeaders(serviceRoleKey), 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+          body: JSON.stringify({ password: hashPasswordScrypt(userData.password), last_login: new Date().toISOString(), updated_at: new Date().toISOString() })
+        });
+        if (!patch.ok) {
+          console.log('Password patch failed with status:', patch.status);
+        }
+      } catch (e) {
+        console.log('Password patch error:', e.message);
+      }
+    }
     console.log('Final user data saved:', dbUserData);
     return { statusCode: 200, body: JSON.stringify({ success: true, action: 'created' }) };
 
