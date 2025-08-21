@@ -170,6 +170,15 @@ class AuthSystem {
         body: JSON.stringify({ email, password })
       });
       if (!resp.ok) {
+        // If account exists but no password set, prompt set password instead of generic 401
+        const existing = await this.checkUserExists(email);
+        if (existing && !existing.password) {
+          this.currentUser = existing;
+          this.isAuthenticated = true;
+          this.updateAuthUI();
+          this.showSetPasswordForm();
+          return;
+        }
         throw new Error('Invalid email or password');
       }
       const data = await resp.json();

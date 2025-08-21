@@ -34,8 +34,8 @@ export async function handler(event, context) {
     const users = await response.json();
     const user = Array.isArray(users) && users.length > 0 ? users[0] : null;
 
-    // Consider session valid only if last_login is set (we clear it on sign-out)
-    if (user && user.last_login) {
+    // Consider session valid if we have a verified JWT cookie and the user exists
+    if (user) {
       return {
         statusCode: 200,
         body: JSON.stringify({ user }),
