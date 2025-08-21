@@ -38,6 +38,28 @@ export async function handler(event, context) {
 
     console.log('Prepared property data for database:', dbPropertyData);
 
+    // First, check if the user exists in the users table
+    console.log('Checking if user exists before saving property...');
+    const userCheckResponse = await fetch(`${url}/rest/v1/users?id=eq.${userId}`, {
+      headers: {
+        'apikey': key,
+        'Authorization': `Bearer ${key}`
+      }
+    });
+
+    if (!userCheckResponse.ok) {
+      console.log('Failed to check user existence:', userCheckResponse.status, userCheckResponse.statusText);
+      return { statusCode: 400, body: 'Failed to verify user exists' };
+    }
+
+    const existingUsers = await userCheckResponse.json();
+    if (!existingUsers || existingUsers.length === 0) {
+      console.log('User not found in database, cannot save property');
+      return { statusCode: 400, body: 'User not found in database. Please sign up first.' };
+    }
+
+    console.log('User verified, proceeding to save property...');
+
     // Insert new property
     const resp = await fetch(`${url}/rest/v1/${table}`, {
       method: 'POST',

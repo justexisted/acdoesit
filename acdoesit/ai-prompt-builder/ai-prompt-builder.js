@@ -223,6 +223,18 @@ document.addEventListener("DOMContentLoaded", () => {
         // });
       } else {
         const errorText = await response.text();
+        console.error('Property save error response:', errorText);
+        
+        // Try to parse the error for better user feedback
+        try {
+          const errorData = JSON.parse(errorText);
+          if (errorData.message && errorData.message.includes('User not found')) {
+            throw new Error('Please sign up first before saving properties. The system needs to create your account.');
+          }
+        } catch (parseError) {
+          // If we can't parse the error, use the original text
+        }
+        
         throw new Error(`Failed to save property: ${errorText}`);
       }
     } catch (error) {
