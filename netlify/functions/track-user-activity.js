@@ -46,7 +46,17 @@ export async function handler(event, context) {
     if (!response.ok) {
       const errorText = await response.text();
       console.error('Failed to track activity:', errorText);
-      return { statusCode: 502, body: `Failed to track activity: ${errorText}` };
+      
+      // If table doesn't exist (404) or other error, return success to prevent site crashes
+      // The activity will be lost, but the site will continue to work
+      if (response.status === 404) {
+        console.log('user_activity table not found - activity tracking disabled');
+        return { statusCode: 200, body: JSON.stringify({ success: true, message: 'Table not found, activity not tracked' }) };
+      }
+      
+      // For other errors, still return success to prevent site crashes
+      console.log('Activity tracking failed, but returning success to prevent site crash');
+      return { statusCode: 200, body: JSON.stringify({ success: true, message: 'Activity not tracked due to error' }) };
     }
 
     console.log('Activity tracked successfully');

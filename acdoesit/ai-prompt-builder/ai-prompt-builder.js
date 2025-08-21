@@ -111,6 +111,8 @@ document.addEventListener("DOMContentLoaded", () => {
         location: location
       };
 
+      console.log('Sending activity data:', activityData);
+
       // Send to tracking endpoint
       const response = await fetch('/.netlify/functions/track-user-activity', {
         method: 'POST',
@@ -128,8 +130,8 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  // Track page load
-  trackUserActivity('page_view', { page: 'ai_prompt_builder' });
+  // Track page load - temporarily disabled to prevent 502 errors
+  // trackUserActivity('page_view', { page: 'ai_prompt_builder' });
 
   // Load saved properties from database
   async function loadSavedProperties() {
@@ -213,12 +215,12 @@ document.addEventListener("DOMContentLoaded", () => {
         // Reload saved properties
         await loadSavedProperties();
         
-        // Track user activity
-        trackUserActivity('property_saved', {
-          property_name: propertyData.propertyName,
-          address: propertyData.address,
-          neighborhood: propertyData.neighborhood
-        });
+        // Track user activity - temporarily disabled to prevent 502 errors
+        // trackUserActivity('property_saved', {
+        //   property_name: propertyData.propertyName,
+        //   address: propertyData.address,
+        //   neighborhood: propertyData.neighborhood
+        // });
       } else {
         const errorText = await response.text();
         throw new Error(`Failed to save property: ${errorText}`);
@@ -367,11 +369,11 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     });
     
-    // Track module switch
-    trackUserActivity('module_switch', { 
-      from_module: activeModule, 
-      to_module: activeModule 
-    });
+    // Track module switch - temporarily disabled to prevent 502 errors
+    // trackUserActivity('module_switch', { 
+    //   from_module: activeModule, 
+    //   to_module: activeModule 
+    // });
   }
 
   // Get saved addresses and neighborhoods from auth system
@@ -597,13 +599,13 @@ document.addEventListener("DOMContentLoaded", () => {
     previewContainer.style.display = "block";
     previewContainer.scrollIntoView({ behavior: "smooth" });
     
-    // Track prompt generation
-    trackUserActivity('prompt_generated', {
-      module: activeModule,
-      template: activeTemplate,
-      fields_filled: Object.keys(values).filter(key => values[key] && values[key].trim()).length,
-      total_fields: Object.keys(values).length
-    });
+    // Track prompt generation - temporarily disabled to prevent 502 errors
+    // trackUserActivity('prompt_generated', {
+    //   module: activeModule,
+    //   template: activeTemplate,
+    //   fields_filled: Object.keys(values).filter(key => values[key] && values[key].trim()).length,
+    //   total_fields: Object.keys(values).length
+    // });
   }
 
   async function copyToClipboard() {
@@ -618,12 +620,12 @@ document.addEventListener("DOMContentLoaded", () => {
       copyBtn.textContent = "Copied!";
       setTimeout(() => copyBtn.textContent = "📋 Copy to Clipboard", 2000);
       
-      // Track copy action
-      trackUserActivity('prompt_copied', {
-        module: activeModule,
-        template: activeTemplate,
-        prompt_length: text.length
-      });
+      // Track copy action - temporarily disabled to prevent 502 errors
+      // trackUserActivity('prompt_copied', {
+      //   module: activeModule,
+      //   template: activeTemplate,
+      //   prompt_length: text.length
+      // });
     } catch (err) {
       alert("Failed to copy to clipboard. Please select and copy manually.");
     }
@@ -636,12 +638,12 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
     
-    // Track save attempt
-    trackUserActivity('prompt_save_attempt', {
-      module: activeModule,
-      template: activeTemplate,
-      prompt_length: text.length
-    });
+    // Track save attempt - temporarily disabled to prevent 502 errors
+    // trackUserActivity('prompt_copied', {
+    //   module: activeModule,
+    //   template: activeTemplate,
+    //   prompt_length: text.length
+    // });
     
     // For now, just show a success message
     showMessage('Prompt saved to your account! You can access it later.', 'success');
@@ -720,11 +722,11 @@ document.addEventListener("DOMContentLoaded", () => {
     
     activeTemplate = templateKey;
     
-    // Track template selection
-    trackUserActivity('template_selected', {
-      module: activeModule,
-      template: templateKey
-    });
+    // Track template selection - temporarily disabled to prevent 502 errors
+    // trackUserActivity('template_selected', {
+    //   module: activeModule,
+    //   template: templateKey
+    // });
   });
 
   generateBtn.addEventListener("click", generatePrompt);
