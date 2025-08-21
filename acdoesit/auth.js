@@ -8,8 +8,11 @@ class AuthSystem {
 
   init() {
     this.checkAuthStatus();
-    this.setupEventListeners();
-    this.setupGoogleAuth();
+    // Only setup event listeners and Google auth if we're on the main page
+    if (document.getElementById('signUpForm') || document.getElementById('signInForm')) {
+      this.setupEventListeners();
+      this.setupGoogleAuth();
+    }
   }
 
   setupEventListeners() {

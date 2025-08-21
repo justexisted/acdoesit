@@ -136,8 +136,16 @@ document.addEventListener("DOMContentLoaded", () => {
   // Load saved properties from database
   async function loadSavedProperties() {
     try {
-      const currentUser = JSON.parse(localStorage.getItem('currentUser'));
-      if (!currentUser) return;
+      // Get current user from auth system instead of localStorage
+      const currentUser = window.authSystem ? window.authSystem.currentUser : null;
+      if (!currentUser) {
+        console.log('No authenticated user found');
+        savedProperties = [];
+        displaySavedProperties();
+        return;
+      }
+
+      console.log('Loading properties for user:', currentUser.id);
 
       const response = await fetch('/.netlify/functions/get-user-properties', {
         method: 'POST',
@@ -185,7 +193,8 @@ document.addEventListener("DOMContentLoaded", () => {
   // Save current property to database
   async function saveCurrentProperty() {
     try {
-      const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+      // Get current user from auth system instead of localStorage
+      const currentUser = window.authSystem ? window.authSystem.currentUser : null;
       if (!currentUser) {
         showMessage('Please sign in to save properties', 'error');
         return;
@@ -243,7 +252,7 @@ document.addEventListener("DOMContentLoaded", () => {
         try {
           const errorData = JSON.parse(errorText);
           if (errorData.message && errorData.message.includes('User not found')) {
-            throw new Error('Please sign up first before saving properties. The system needs to create your account.');
+            throw new Error('User authentication error. Please refresh the page and try again.');
           }
         } catch (parseError) {
           // If we can't parse the error, use the original text
@@ -327,7 +336,8 @@ document.addEventListener("DOMContentLoaded", () => {
   window.deleteProperty = async function(index) {
     if (confirm('Are you sure you want to delete this saved property?')) {
       try {
-        const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+        // Get current user from auth system instead of localStorage
+        const currentUser = window.authSystem ? window.authSystem.currentUser : null;
         if (!currentUser) {
           showMessage('Please sign in to delete properties', 'error');
           return;
@@ -745,6 +755,35 @@ document.addEventListener("DOMContentLoaded", () => {
       await saveNeighborhoodToAccount(neighborhood, label);
     }
   };
+
+  // Initialize the AI Prompt Builder
+  function init() {
+    // Set up module switching
+    setupModuleSwitching();
+    
+    // Set up form generation
+    setupFormGeneration();
+    
+    // Set up prompt generation
+    setupPromptGeneration();
+    
+    // Load saved properties if user is authenticated
+    if (window.authSystem && window.authSystem.isAuthenticated) {
+      loadSavedProperties();
+    }
+    
+    // Listen for authentication events
+    window.addEventListener('userSignedIn', () => {
+      console.log('User signed in, loading saved properties...');
+      loadSavedProperties();
+    });
+    
+    window.addEventListener('userSignedOut', () => {
+      console.log('User signed out, clearing saved properties...');
+      savedProperties = [];
+      displaySavedProperties();
+    });
+  }
 
   picker.addEventListener("click", (e) => {
     const moduleBtn = e.target.closest(".module-btn");

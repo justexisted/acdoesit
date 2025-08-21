@@ -632,19 +632,21 @@
     <script>
         // Check authentication and show appropriate content
         function checkAuthAndShowContent() {
-            const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+            // Wait for auth system to be available
+            if (!window.authSystem) {
+                setTimeout(checkAuthAndShowContent, 100);
+                return;
+            }
+
             const authRequired = document.getElementById('auth-required');
             const appContent = document.getElementById('app-content');
             const userGreeting = document.getElementById('user-greeting');
 
-            if (currentUser && currentUser.firstName) {
+            if (window.authSystem.isAuthenticated && window.authSystem.currentUser) {
                 // User is authenticated
                 authRequired.style.display = 'none';
                 appContent.style.display = 'block';
-                userGreeting.textContent = `Welcome, ${currentUser.firstName}!`;
-                
-                // Make authSystem available globally for the AI Prompt Builder
-                window.authSystem = window.authSystem || {};
+                userGreeting.textContent = `Welcome, ${window.authSystem.currentUser.firstName}!`;
             } else {
                 // User is not authenticated
                 authRequired.style.display = 'block';
