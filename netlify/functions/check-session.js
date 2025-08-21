@@ -1,21 +1,27 @@
 import { getSupabaseConfig, supabaseHeaders } from './_supabase.js';
+import { readSessionCookie, verifyJWT } from './_auth.js';
 
 export async function handler(event, context) {
   try {
     console.log('check-session function called');
     const { url, serviceRoleKey } = getSupabaseConfig();
 
-    const { userId } = JSON.parse(event.body || '{}');
-    if (!userId) {
-      return {
-        statusCode: 200,
-        body: JSON.stringify({ user: null }),
-        headers: { 'Content-Type': 'application/json' }
-      };
+    // Prefer cookie-based session
+    const sessionToken = readSessionCookie(event);
+    let userIdFromCookie = null;
+    if (sessionToken) {
+      const payload = verifyJWT(sessionToken);
+      userIdFromCookie = payload && payload.sub ? payload.sub : null;
+    }
+
+    const bodyUserId = (() => { try { return JSON.parse(event.body || '{}').userId || null; } catch { return null; } })();
+    const targetUserId = userIdFromCookie || bodyUserId;
+    if (!targetUserId) {
+      return { statusCode: 200, body: JSON.stringify({ user: null }), headers: { 'Content-Type': 'application/json' } };
     }
 
     // Fetch exactly this user
-    const response = await fetch(`${url}/rest/v1/users?id=eq.${encodeURIComponent(userId)}&select=*`, { headers: supabaseHeaders(serviceRoleKey) });
+    const response = await fetch(`${url}/rest/v1/users?id=eq.${encodeURIComponent(targetUserId)}&select=*`, { headers: supabaseHeaders(serviceRoleKey) });
     if (!response.ok) {
       console.log('User lookup failed with status', response.status);
       return {

@@ -163,27 +163,25 @@ class AuthSystem {
         throw new Error('Email and password are required');
       }
 
-      // Look up user
-      const user = await this.checkUserExists(email);
-      if (!user) {
+      // Perform secure login (sets JWT cookie server-side)
+      const resp = await fetch('/.netlify/functions/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
+      });
+      if (!resp.ok) {
         throw new Error('Invalid email or password');
       }
+      const data = await resp.json();
+      const user = {
+        id: data.user.id,
+        email: data.user.email,
+        firstName: this.currentUser?.firstName || '',
+        lastName: this.currentUser?.lastName || '',
+        provider: 'email'
+      };
 
-      // If user has no password (likely Google), prompt to set password
-      if (!user.password) {
-        this.currentUser = user;
-        this.isAuthenticated = true;
-        this.updateAuthUI();
-        this.showSetPasswordForm();
-        return;
-      }
-
-      // Compare simple (plaintext) password per current schema
-      if (user.password !== password) {
-        throw new Error('Invalid email or password');
-      }
-
-      // Sign in the user
+      // Sign in locally (updates last_login and UI)
       await this.signIn(user);
       
       this.showMessage('Signed in successfully!', 'success');
@@ -350,8 +348,26 @@ class AuthSystem {
         const text = await resp.text();
         throw new Error(text || 'Failed to set password');
       }
+      // Create/refresh session cookie
+      try {
+        await fetch('/.netlify/functions/create-session', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId, email: this.currentUser?.email || '' })
+        });
+      } catch (e) {}
       // Persist session id for cross-page continuity
       try { localStorage.setItem('sessionUserId', userId); } catch (e) {}
+      // Also update last_login so other pages recognize the active session
+      try {
+        await fetch('/.netlify/functions/update-user-session', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId, lastLogin: new Date().toISOString() })
+        });
+      } catch (e) {
+        // Non-fatal
+      }
       this.showMessage('Password set successfully. You can now sign in with email.', 'success');
       this.closeAllModals();
     } catch (err) {
@@ -436,6 +452,14 @@ class AuthSystem {
   async signOut() {
     // Use current user id or persisted session id for deterministic server clear
     const previousUserId = this.currentUser?.id || (typeof localStorage !== 'undefined' ? localStorage.getItem('sessionUserId') : null);
+    // Clear server cookie-based session
+    try {
+      await fetch('/.netlify/functions/logout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: previousUserId })
+      });
+    } catch (e) {}
     // Attempt to clear server-side session first
     await this.clearUserSession(previousUserId);
     // Clear local persisted session id
@@ -472,22 +496,20 @@ class AuthSystem {
       if (existingUser) {
         // Update existing user with Google info
         await this.updateGoogleUser(existingUser.id, user);
-        // If password missing, prompt to set it
+        // Create cookie session
+        await fetch('/.netlify/functions/create-session', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId: existingUser.id, email: existingUser.email }) });
+        // If password missing, prompt to set it after sign-in
+        await this.signIn(existingUser);
         if (!existingUser.password) {
-          this.currentUser = existingUser;
-          this.isAuthenticated = true;
-          this.updateAuthUI();
           this.showSetPasswordForm();
           return;
         }
-        await this.signIn(existingUser);
       } else {
         // Create new Google user
         const newUser = await this.createGoogleUser(user);
-        // Prompt new Google user to set password
-        this.currentUser = newUser;
-        this.isAuthenticated = true;
-        this.updateAuthUI();
+        // Create session cookie and sign in
+        await fetch('/.netlify/functions/create-session', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId: newUser.id, email: newUser.email }) });
+        await this.signIn(newUser);
         this.showSetPasswordForm();
         return;
       }

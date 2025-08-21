@@ -1,4 +1,5 @@
 import { getSupabaseConfig, supabaseHeaders } from './_supabase.js';
+import { hashPasswordScrypt } from './_auth.js';
 
 export async function handler(event) {
   try {
@@ -12,7 +13,7 @@ export async function handler(event) {
     const resp = await fetch(`${url}/rest/v1/users?id=eq.${encodeURIComponent(userId)}`, {
       method: 'PATCH',
       headers: { ...supabaseHeaders(serviceRoleKey), 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
-      body: JSON.stringify({ password: newPassword, updated_at: new Date().toISOString() })
+      body: JSON.stringify({ password: hashPasswordScrypt(newPassword), updated_at: new Date().toISOString() })
     });
 
     if (!resp.ok) {
