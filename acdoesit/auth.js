@@ -322,7 +322,11 @@ class AuthSystem {
     this.isAuthenticated = true;
     
     // Store session in database (not just localStorage)
-    await this.updateUserSession(user);
+    const updated = await this.updateUserSession(user);
+    // Persist session identifier locally for cross-page checks
+    if (updated) {
+      try { localStorage.setItem('sessionUserId', user.id); } catch (e) {}
+    }
     
     // Update UI
     this.updateAuthUI();
@@ -334,7 +338,7 @@ class AuthSystem {
   async updateUserSession(user) {
     try {
       // Update last login time in database
-      await fetch('/.netlify/functions/update-user-session', {
+      const resp = await fetch('/.netlify/functions/update-user-session', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
@@ -342,32 +346,41 @@ class AuthSystem {
           lastLogin: new Date().toISOString()
         })
       });
+      if (!resp.ok) {
+        console.error('update-user-session failed with status:', resp.status);
+        return false;
+      }
+      return true;
     } catch (error) {
       console.error('Error updating user session:', error);
+      return false;
     }
   }
 
-  signOut() {
+  async signOut() {
+    // Use current user id or persisted session id for deterministic server clear
+    const previousUserId = this.currentUser?.id || (typeof localStorage !== 'undefined' ? localStorage.getItem('sessionUserId') : null);
+    // Attempt to clear server-side session first
+    await this.clearUserSession(previousUserId);
+    // Clear local persisted session id
+    try { localStorage.removeItem('sessionUserId'); } catch (e) {}
+    // Clear local auth state
     this.currentUser = null;
     this.isAuthenticated = false;
-    
-    // Clear session from database
-    this.clearUserSession();
-    
     // Update UI
     this.updateAuthUI();
-    
     // Trigger custom event
     window.dispatchEvent(new CustomEvent('userSignedOut'));
   }
 
-  async clearUserSession() {
+  async clearUserSession(userId) {
     try {
-      if (this.currentUser) {
+      const idToClear = userId || (this.currentUser && this.currentUser.id);
+      if (idToClear) {
         await fetch('/.netlify/functions/clear-user-session', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ userId: this.currentUser.id })
+          body: JSON.stringify({ userId: idToClear })
         });
       }
     } catch (error) {
@@ -448,9 +461,13 @@ class AuthSystem {
   async checkDatabaseSession() {
     try {
       console.log('Checking database session...');
+      // Send stored session user id if present to avoid ghost sign-ins
+      let sessionUserId = null;
+      try { sessionUserId = localStorage.getItem('sessionUserId'); } catch (e) {}
       const response = await fetch('/.netlify/functions/check-session', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' }
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: sessionUserId })
       });
 
       console.log('check-session response status:', response.status);
