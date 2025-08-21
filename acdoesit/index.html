@@ -127,6 +127,7 @@
         <div class="container">
             <div id="ai-prompt-builder-section" style="text-align: center; margin-bottom: 20px; display: none;">
                 <a href="./ai-prompt-builder/" class="btn ai-prompt-btn">AI Prompt Builder</a>
+                <button onclick="debugDatabase()" class="btn" style="margin-left: 10px; background: #6c757d;">Debug DB</button>
             </div>
             <h1 class="headline">Your Website Is Costing You Customers.</h1>
             <p class="subhead">We build simple solutions that turn your website visitors into paying clients. Guaranteed.</p>
@@ -291,6 +292,29 @@
 
         // Listen for hash changes
         window.addEventListener('hashchange', handleHashLinks);
+
+        // Debug function to test database connection
+        async function debugDatabase() {
+            try {
+                console.log('Testing database connection...');
+                const response = await fetch('/.netlify/functions/debug-users', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    console.log('Database debug results:', data);
+                    alert(`Database debug complete! Found ${data.totalUsers} users. Check console for details.`);
+                } else {
+                    console.error('Debug failed:', response.status);
+                    alert('Debug failed. Check console for details.');
+                }
+            } catch (error) {
+                console.error('Debug error:', error);
+                alert('Debug error: ' + error.message);
+            }
+        }
     </script>
 </body>
 </html>

@@ -14,6 +14,8 @@ export async function handler(event, context) {
     
     // First try to find users with recent login activity
     console.log('Checking for users with recent login activity...');
+    console.log('Looking for users with last_login >=', twentyFourHoursAgo);
+    
     let response = await fetch(`${url}/rest/v1/users?last_login=gte.${twentyFourHoursAgo}&select=*&order=last_login.desc&limit=1`, {
       headers: {
         'apikey': key,
@@ -35,10 +37,14 @@ export async function handler(event, context) {
           headers: { 'Content-Type': 'application/json' }
         };
       }
+    } else {
+      console.log('last_login query failed, trying alternative approach...');
     }
 
     // If no recent login activity, check for recently created users
     console.log('Checking for recently created users...');
+    console.log('Looking for users with created_at >=', twentyFourHoursAgo);
+    
     response = await fetch(`${url}/rest/v1/users?created_at=gte.${twentyFourHoursAgo}&select=*&order=created_at.desc&limit=1`, {
       headers: {
         'apikey': key,
@@ -70,9 +76,9 @@ export async function handler(event, context) {
       };
     }
 
-    // If no recent users found, let's check all users for debugging
+    // If no recent users found, let's check all users and return the most recent one
     console.log('No recent users found, checking all users...');
-    const allUsersResponse = await fetch(`${url}/rest/v1/users?select=*&limit=5`, {
+    const allUsersResponse = await fetch(`${url}/rest/v1/users?select=*&order=created_at.desc&limit=1`, {
       headers: {
         'apikey': key,
         'Authorization': `Bearer ${key}`
@@ -82,6 +88,16 @@ export async function handler(event, context) {
     if (allUsersResponse.ok) {
       const allUsers = await allUsersResponse.json();
       console.log('All users in database:', allUsers);
+      
+      if (allUsers && allUsers.length > 0) {
+        const user = allUsers[0];
+        console.log('Returning most recent user:', user);
+        return {
+          statusCode: 200,
+          body: JSON.stringify({ user }),
+          headers: { 'Content-Type': 'application/json' }
+        };
+      }
     }
     
     return {

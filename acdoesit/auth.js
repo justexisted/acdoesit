@@ -271,13 +271,23 @@ class AuthSystem {
 
   async verifyCredentials(email, password) {
     try {
+      console.log('Verifying credentials for email:', email);
       const user = await this.checkUserExists(email);
-      if (!user) return null;
+      console.log('User found for verification:', user);
+      
+      if (!user) {
+        console.log('No user found for verification');
+        return null;
+      }
 
       // In production, verify password hash
+      console.log('Comparing passwords - stored:', user.password, 'provided:', password);
       if (user.password === password) {
+        console.log('Password verification successful');
         return user;
       }
+      
+      console.log('Password verification failed');
       return null;
     } catch (error) {
       console.error('Error verifying credentials:', error);

@@ -54,6 +54,27 @@
             background: #4b5563;
         }
 
+        .header-top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            padding: 20px 0;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .header-top h1 {
+            margin: 0;
+            flex-grow: 1;
+            text-align: center;
+        }
+
+        .user-welcome {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
         .auth-required {
             text-align: center;
             padding: 60px 20px;
@@ -624,15 +645,14 @@
         <!-- Main App Content -->
         <div id="app-content" style="display: none;">
             <div class="header">
-                <h1>🏠 AI Prompt Builder</h1>
-                <div class="user-welcome">
-                    <span id="user-greeting">Welcome!</span>
-                    <button onclick="signOut()" class="btn" style="font-size: 0.9rem;">Sign Out</button>
+                <div class="header-top">
+                    <a href="../index.html" class="back-btn">← Back to Home</a>
+                    <h1>🏠 AI Prompt Builder</h1>
+                    <div class="user-welcome">
+                        <span id="user-greeting">Welcome!</span>
+                        <button onclick="signOut()" class="btn" style="font-size: 0.9rem;">Sign Out</button>
+                    </div>
                 </div>
-            </div>
-
-        <div class="nav-row">
-                <a href="../index.html" class="back-btn">← Back to Home</a>
             </div>
 
             <!-- Saved Properties Section -->
