@@ -346,32 +346,76 @@
             font-size: 0.9rem;
         }
 
-        .manual-google-signin {
-            margin-top: 1rem;
-            text-align: center;
+
+
+        .email-signin-form {
+            margin-bottom: 1.5rem;
         }
 
-        .google-signin-btn {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            width: 100%;
-            padding: 12px 16px;
-            background: white;
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
             color: #333;
+            font-weight: 500;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 12px;
             border: 1px solid #ddd;
-            border-radius: 8px;
+            border-radius: 6px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .login-btn {
+            width: 100%;
+            padding: 12px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 6px;
             font-size: 16px;
             font-weight: 500;
             cursor: pointer;
-            transition: all 0.3s;
+            transition: background-color 0.3s;
         }
 
-        .google-signin-btn:hover {
-            background: #f8f9fa;
-            border-color: #bbb;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        .login-btn:hover {
+            background: #5a6fd8;
+        }
+
+        .divider {
+            text-align: center;
+            margin: 1.5rem 0;
+            position: relative;
+        }
+
+        .divider::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: #ddd;
+        }
+
+        .divider span {
+            background: white;
+            padding: 0 1rem;
+            color: #666;
+            font-size: 0.9rem;
         }
         
         @media (max-width: 768px) {
@@ -421,16 +465,26 @@
             </div>
         </div>
         
-        <!-- Alternative: Manual Admin Access Button -->
-        <div class="manual-google-signin">
-            <button id="manualGoogleSignIn" class="google-signin-btn">
-                🔐 Quick Admin Access
-            </button>
+        <!-- Email/Password Sign-In Form -->
+        <div class="email-signin-form">
+            <div class="form-group">
+                <label for="adminEmail">Email</label>
+                <input type="email" id="adminEmail" placeholder="Enter your email" required>
+            </div>
+            <div class="form-group">
+                <label for="adminPassword">Password</label>
+                <input type="password" id="adminPassword" placeholder="Enter your password" required>
+            </div>
+            <button type="submit" class="login-btn">Sign In</button>
+        </div>
+        
+        <div class="divider">
+            <span>or</span>
         </div>
         
         <div class="login-info">
             <p>Only authorized administrators can access this dashboard.</p>
-            <p>Use Google OAuth above or click the button below for quick access.</p>
+            <p>Please sign in with your credentials or Google account.</p>
         </div>
         </div>
     </div>

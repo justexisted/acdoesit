@@ -139,22 +139,50 @@ document.addEventListener('DOMContentLoaded', () => {
   // Event listeners for authentication
   logoutBtn.addEventListener('click', handleLogout);
   
-  // Manual Google sign-in button
-  const manualGoogleSignInBtn = document.getElementById('manualGoogleSignIn');
-  if (manualGoogleSignInBtn) {
-    manualGoogleSignInBtn.addEventListener('click', () => {
-      // Direct admin access without JWT decoding
-      console.log('Manual admin sign-in clicked');
-      
-      // Store admin session directly
-      localStorage.setItem('adminAuthToken', ADMIN_EMAIL);
+  // Email/Password form submission
+  const adminEmailInput = document.getElementById('adminEmail');
+  const adminPasswordInput = document.getElementById('adminPassword');
+  
+  // Handle email/password login
+  function handleEmailPasswordLogin() {
+    const email = adminEmailInput.value.trim();
+    const password = adminPasswordInput.value.trim();
+    
+    if (!email || !password) {
+      showLoginError('Please enter both email and password');
+      return;
+    }
+    
+    // Check if this is the admin email
+    if (email === ADMIN_EMAIL) {
+      // For now, accept any password for the admin email
+      // In production, you'd verify against a secure password hash
+      localStorage.setItem('adminAuthToken', email);
       localStorage.setItem('adminName', 'Admin User');
       localStorage.setItem('adminPicture', '');
       
       isAuthenticated = true;
       showDashboard();
       hideLoginError();
+    } else {
+      showLoginError(`Access denied. Only ${ADMIN_EMAIL} can access admin dashboard.`);
+    }
+  }
+  
+  // Add event listeners for email/password form
+  if (adminEmailInput && adminPasswordInput) {
+    // Handle Enter key on password field
+    adminPasswordInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        handleEmailPasswordLogin();
+      }
     });
+    
+    // Handle form submission
+    const loginBtn = document.querySelector('.login-btn');
+    if (loginBtn) {
+      loginBtn.addEventListener('click', handleEmailPasswordLogin);
+    }
   }
 
   // Utility functions
