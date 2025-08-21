@@ -17,11 +17,7 @@ export async function handler(event, context) {
     const { url, serviceRoleKey } = getSupabaseConfig();
     const table = 'users';
     
-    console.log('Using Supabase config:', { 
-      url: url, 
-      key: key ? 'configured' : 'missing', 
-      table: table 
-    });
+    console.log('Using Supabase config:', { url, table });
 
     // Prepare minimal user data for initial insert
     const dbUserData = {
