@@ -632,6 +632,8 @@ class AuthSystem {
         console.log('Mapped user data:', this.currentUser);
         this.isAuthenticated = true;
         this.updateAuthUI();
+        // Notify other pages/components that a session has been restored
+        window.dispatchEvent(new CustomEvent('userSignedIn', { detail: this.currentUser }));
       } else {
         console.log('No user found in database session');
       }
