@@ -433,7 +433,7 @@ class AuthSystem {
     
     // Store session in database (not just localStorage)
     const updated = await this.updateUserSession(sanitizedUser);
-    // Create/refresh cookie-based session and persist session id locally regardless of update outcome
+    // Create/refresh cookie-based session and persist identifiers locally regardless of update outcome
     try {
       await fetch('/.netlify/functions/create-session', {
         method: 'POST',
@@ -441,7 +441,10 @@ class AuthSystem {
         body: JSON.stringify({ userId: sanitizedUser.id, email: sanitizedUser.email || '' })
       });
     } catch (e) {}
-    try { localStorage.setItem('sessionUserId', sanitizedUser.id); } catch (e) {}
+    try {
+      localStorage.setItem('sessionUserId', sanitizedUser.id);
+      if (sanitizedUser.email) localStorage.setItem('sessionEmail', sanitizedUser.email);
+    } catch (e) {}
     
     // Update UI
     this.updateAuthUI();
@@ -486,7 +489,7 @@ class AuthSystem {
     // Attempt to clear server-side session first
     await this.clearUserSession(previousUserId);
     // Clear local persisted session id
-    try { localStorage.removeItem('sessionUserId'); } catch (e) {}
+    try { localStorage.removeItem('sessionUserId'); localStorage.removeItem('sessionEmail'); } catch (e) {}
     // Clear local auth state
     this.currentUser = null;
     this.isAuthenticated = false;
@@ -597,11 +600,15 @@ class AuthSystem {
       console.log('Checking database session...');
       // Send stored session user id if present to avoid ghost sign-ins
       let sessionUserId = null;
-      try { sessionUserId = localStorage.getItem('sessionUserId'); } catch (e) {}
+      let sessionEmail = null;
+      try {
+        sessionUserId = localStorage.getItem('sessionUserId');
+        sessionEmail = localStorage.getItem('sessionEmail');
+      } catch (e) {}
       const response = await fetch('/.netlify/functions/check-session', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: sessionUserId })
+        body: JSON.stringify({ userId: sessionUserId, email: sessionEmail })
       });
 
       console.log('check-session response status:', response.status);

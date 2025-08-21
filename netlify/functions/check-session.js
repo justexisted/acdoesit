@@ -14,14 +14,21 @@ export async function handler(event, context) {
       userIdFromCookie = payload && payload.sub ? payload.sub : null;
     }
 
-    const bodyUserId = (() => { try { return JSON.parse(event.body || '{}').userId || null; } catch { return null; } })();
+    const parsedBody = (() => { try { return JSON.parse(event.body || '{}'); } catch { return {}; } })();
+    const bodyUserId = parsedBody.userId || null;
+    const bodyEmail = parsedBody.email || null;
     const targetUserId = userIdFromCookie || bodyUserId;
-    if (!targetUserId) {
+
+    let response;
+    if (targetUserId) {
+      // Fetch exactly this user by id
+      response = await fetch(`${url}/rest/v1/users?id=eq.${encodeURIComponent(targetUserId)}&select=*`, { headers: supabaseHeaders(serviceRoleKey) });
+    } else if (bodyEmail) {
+      // Fallback: fetch by email when no cookie/id
+      response = await fetch(`${url}/rest/v1/users?email=eq.${encodeURIComponent(bodyEmail)}&select=*`, { headers: supabaseHeaders(serviceRoleKey) });
+    } else {
       return { statusCode: 200, body: JSON.stringify({ user: null }), headers: { 'Content-Type': 'application/json' } };
     }
-
-    // Fetch exactly this user
-    const response = await fetch(`${url}/rest/v1/users?id=eq.${encodeURIComponent(targetUserId)}&select=*`, { headers: supabaseHeaders(serviceRoleKey) });
     if (!response.ok) {
       console.log('User lookup failed with status', response.status);
       return {
