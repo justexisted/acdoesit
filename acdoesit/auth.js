@@ -30,6 +30,12 @@ class AuthSystem {
       signInForm.addEventListener('submit', (e) => this.handleSignIn(e));
     }
 
+    // Set password form (for Google users without password)
+    const setPasswordForm = document.getElementById('setPasswordForm');
+    if (setPasswordForm) {
+      setPasswordForm.addEventListener('submit', (e) => this.handleSetPassword(e));
+    }
+
     // Password reset form
     const passwordResetForm = document.getElementById('passwordResetForm');
     if (passwordResetForm) {
@@ -157,9 +163,23 @@ class AuthSystem {
         throw new Error('Email and password are required');
       }
 
-      // Verify credentials
-      const user = await this.verifyCredentials(email, password);
+      // Look up user
+      const user = await this.checkUserExists(email);
       if (!user) {
+        throw new Error('Invalid email or password');
+      }
+
+      // If user has no password (likely Google), prompt to set password
+      if (!user.password) {
+        this.currentUser = user;
+        this.isAuthenticated = true;
+        this.updateAuthUI();
+        this.showSetPasswordForm();
+        return;
+      }
+
+      // Compare simple (plaintext) password per current schema
+      if (user.password !== password) {
         throw new Error('Invalid email or password');
       }
 
@@ -295,10 +315,66 @@ class AuthSystem {
     }
   }
 
+  showSetPasswordForm() {
+    const form = document.getElementById('setPasswordForm');
+    const modal = document.getElementById('signInModal');
+    if (form && modal) {
+      if (modal.style.display !== 'flex') {
+        modal.style.display = 'flex';
+        modal.style.visibility = 'visible';
+        modal.setAttribute('aria-hidden', 'false');
+        modal.classList.add('active');
+      }
+      form.style.display = 'block';
+    }
+    this.showMessage('Set a password to enable email sign-in.', 'info');
+  }
+
+  async handleSetPassword(e) {
+    e.preventDefault();
+    try {
+      const input = document.getElementById('setPassword');
+      const newPassword = input && input.value ? input.value : '';
+      if (!newPassword || newPassword.length < 6) {
+        throw new Error('Password must be at least 6 characters');
+      }
+      const userId = this.currentUser?.id || (typeof localStorage !== 'undefined' ? localStorage.getItem('sessionUserId') : null);
+      if (!userId) throw new Error('No user session found');
+
+      const resp = await fetch('/.netlify/functions/set-user-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId, newPassword })
+      });
+      if (!resp.ok) {
+        const text = await resp.text();
+        throw new Error(text || 'Failed to set password');
+      }
+      // Persist session id for cross-page continuity
+      try { localStorage.setItem('sessionUserId', userId); } catch (e) {}
+      this.showMessage('Password set successfully. You can now sign in with email.', 'success');
+      this.closeAllModals();
+    } catch (err) {
+      this.showMessage(err.message || 'Failed to set password', 'error');
+    }
+  }
+
   async sendPasswordResetEmail(email) {
-    // Implement password reset email functionality
-    // For now, just return success
-    return true;
+    try {
+      const resp = await fetch('/.netlify/functions/request-password-reset', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email })
+      });
+      if (!resp.ok) {
+        const text = await resp.text();
+        throw new Error(text || 'Failed to send reset email');
+      }
+      return true;
+    } catch (e) {
+      console.error('Password reset email error:', e);
+      throw e;
+    }
   }
 
   showPasswordResetOption(email) {
@@ -396,11 +472,24 @@ class AuthSystem {
       if (existingUser) {
         // Update existing user with Google info
         await this.updateGoogleUser(existingUser.id, user);
+        // If password missing, prompt to set it
+        if (!existingUser.password) {
+          this.currentUser = existingUser;
+          this.isAuthenticated = true;
+          this.updateAuthUI();
+          this.showSetPasswordForm();
+          return;
+        }
         await this.signIn(existingUser);
       } else {
         // Create new Google user
         const newUser = await this.createGoogleUser(user);
-        await this.signIn(newUser);
+        // Prompt new Google user to set password
+        this.currentUser = newUser;
+        this.isAuthenticated = true;
+        this.updateAuthUI();
+        this.showSetPasswordForm();
+        return;
       }
       
       this.showMessage('Signed in with Google successfully!', 'success');

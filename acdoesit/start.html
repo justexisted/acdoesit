@@ -9,6 +9,15 @@
   <body>
     <main class="section step" style="min-height:100vh;display:flex;align-items:center;">
       <div class="container" style="width:min(800px,100% - 24px);">
+        <div id="reset-box" style="display:none;background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:16px;margin-bottom:16px;">
+          <h2 style="margin:0 0 8px 0;">Reset your password</h2>
+          <p style="margin:0 0 12px 0;">Enter a new password below.</p>
+          <div class="form-group">
+            <label for="newPassword">New Password</label>
+            <input type="password" id="newPassword" minlength="6" />
+          </div>
+          <button id="confirmResetBtn" class="btn btn-accent">Confirm Reset</button>
+        </div>
         <div class="nav-row">
           <a id="back" class="btn" href="index.html">← Back</a>
           <a id="next" class="btn btn-accent" href="role.html">Next →</a>
@@ -37,6 +46,35 @@
           const n = new URL(next.getAttribute('href'), window.location.origin);
           n.search = '?' + params.toString();
           next.setAttribute('href', n.pathname + n.search);
+        }
+      })();
+
+      // Handle #reset=token in hash
+      (function(){
+        const hash = window.location.hash || '';
+        const m = hash.match(/reset=([A-Za-z0-9]+)/);
+        if (m) {
+          const token = m[1];
+          const box = document.getElementById('reset-box');
+          if (box) box.style.display = 'block';
+          const btn = document.getElementById('confirmResetBtn');
+          btn && btn.addEventListener('click', async () => {
+            const pw = document.getElementById('newPassword').value;
+            if (!pw || pw.length < 6) { alert('Password must be at least 6 characters'); return; }
+            try {
+              const resp = await fetch('/.netlify/functions/confirm-password-reset', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ token, newPassword: pw })
+              });
+              if (!resp.ok) { const t = await resp.text(); throw new Error(t || 'Reset failed'); }
+              alert('Password updated. You can now sign in.');
+              window.location.hash = '';
+              window.location.href = 'index.html#signin';
+            } catch (e) {
+              alert('Reset failed: ' + e.message);
+            }
+          });
         }
       })();
     </script>
