@@ -69,7 +69,8 @@ document.addEventListener("DOMContentLoaded", () => {
   let activeTemplate = "full"; // For listing module templates
   let formData = {}; // Store form data across module switches
   let savedProperties = []; // Store saved properties
-  
+  let promptsByProperty = {}; // property_id -> prompts array
+
   const picker = document.getElementById("module-picker");
   const formEl = document.getElementById("module-form");
   const templateSelector = document.getElementById("template-selector");
@@ -180,9 +181,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
       if (response.ok) {
         const properties = await response.json();
-        console.log('Loaded properties from database:', properties);
-        
-        // Update the saved properties array
         savedProperties = properties.map(prop => ({
           id: prop.id,
           userId: prop.user_id,
@@ -196,8 +194,7 @@ document.addEventListener("DOMContentLoaded", () => {
           createdAt: prop.created_at,
           formData: prop.form_data || {}
         }));
-        
-        console.log('Mapped saved properties:', savedProperties);
+        await loadAllPrompts();
         displaySavedProperties();
       } else {
         console.log('Failed to load properties from database');
@@ -205,6 +202,38 @@ document.addEventListener("DOMContentLoaded", () => {
     } catch (error) {
       console.log('Error loading properties from database:', error);
     }
+  }
+
+  async function loadAllPrompts() {
+    promptsByProperty = {};
+    try {
+      const currentUser = await getCurrentUser();
+      if (!currentUser) return;
+      const resp = await fetch('/.netlify/functions/get-user-prompts', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId: currentUser.id }) });
+      if (!resp.ok) return;
+      const prompts = await resp.json();
+      prompts.forEach(p => {
+        const pid = p.property_id || 0;
+        if (!promptsByProperty[pid]) promptsByProperty[pid] = [];
+        promptsByProperty[pid].push(p);
+      });
+    } catch (e) { /* ignore */ }
+  }
+
+  async function findOrCreateCurrentPropertyId() {
+    const currentUser = await getCurrentUser();
+    if (!currentUser) return null;
+    const values = getValues();
+    const address = values.Property_Address || values.Parcel_Address_or_APN || '';
+    if (!address) return null;
+    // Try to find existing property by address for this user
+    const match = savedProperties.find(p => (p.address || '').trim().toLowerCase() === address.trim().toLowerCase());
+    if (match) return match.id;
+    // Create property then reload and find
+    await saveCurrentProperty();
+    await loadSavedProperties();
+    const match2 = savedProperties.find(p => (p.address || '').trim().toLowerCase() === address.trim().toLowerCase());
+    return match2 ? match2.id : null;
   }
 
   // Save current property to database
@@ -283,6 +312,9 @@ document.addEventListener("DOMContentLoaded", () => {
       console.log('Displaying property:', property);
       console.log('Address:', address, 'Neighborhood:', neighborhood, 'Type:', propertyType, 'Date:', savedDate);
       
+      const prompts = promptsByProperty[property.id] || [];
+      const promptOptions = prompts.map(p => `<option value="${p.id}">${(p.module || 'listing')} ${p.template || ''} — ${new Date(p.created_at).toLocaleString()}</option>`).join('');
+
       propertyEl.innerHTML = `
         <div class="property-header">
           <div>
@@ -295,9 +327,22 @@ document.addEventListener("DOMContentLoaded", () => {
           <strong>Module:</strong> ${property.module || 'Unknown'}<br>
           <strong>Saved:</strong> ${new Date(savedDate).toLocaleDateString()}
         </div>
-        <div class="property-actions">
+        <div class="property-actions" style="align-items:center; gap:8px;">
           <button class="property-btn property-btn-primary" onclick="loadProperty(${index})">📝 Load Property</button>
           <button class="property-btn property-btn-danger" onclick="deleteProperty(${index})">🗑️ Delete</button>
+        </div>
+        <div class="property-details" style="margin-top:10px;">
+          <strong>Saved Prompts:</strong>
+          <div class="action-buttons" style="margin-top:8px;">
+            <select id="prompt-select-${property.id}" class="btn" style="background:#fff;color:#374151;border:1px solid #d1d5db;">
+              <option value="">Select a saved prompt…</option>
+              ${promptOptions}
+            </select>
+            <button class="property-btn" onclick="previewPrompt(${property.id})">Preview</button>
+            <button class="property-btn" onclick="editPrompt(${property.id})">Edit</button>
+            <button class="property-btn property-btn-danger" onclick="removePrompt(${property.id})">Delete</button>
+          </div>
+          <div id="prompt-preview-${property.id}" class="preview" style="display:none; margin-top:8px;"></div>
         </div>
       `;
       
@@ -745,6 +790,11 @@ document.addEventListener("DOMContentLoaded", () => {
       showMessage('Please sign in to save prompts', 'error');
       return;
     }
+    const propertyId = await findOrCreateCurrentPropertyId();
+    if (!propertyId) {
+      showMessage('Please enter and save a property address first', 'error');
+      return;
+    }
     try {
       const resp = await fetch('/.netlify/functions/save-user-prompt', {
         method: 'POST',
@@ -754,15 +804,17 @@ document.addEventListener("DOMContentLoaded", () => {
           module: activeModule,
           template: activeTemplate,
           prompt: text,
-          formData: getValues()
+          formData: getValues(),
+          propertyId
         })
       });
       if (!resp.ok) {
         const t = await resp.text();
         throw new Error(t || 'Failed to save prompt');
       }
-      showMessage('Prompt saved to your account! You can access it later.', 'success');
-      loadSavedPrompts();
+      showMessage('Prompt saved to your account!', 'success');
+      await loadAllPrompts();
+      displaySavedProperties();
     } catch (e) {
       showMessage(e.message || 'Failed to save prompt', 'error');
     }
@@ -823,6 +875,48 @@ document.addEventListener("DOMContentLoaded", () => {
     if (label !== null) { // User didn't cancel
       await saveNeighborhoodToAccount(neighborhood, label);
     }
+  };
+
+  window.previewPrompt = function(propertyId) {
+    const select = document.getElementById(`prompt-select-${propertyId}`);
+    const preview = document.getElementById(`prompt-preview-${propertyId}`);
+    const pid = select.value;
+    if (!pid) { preview.style.display='none'; preview.textContent=''; return; }
+    const prompt = (promptsByProperty[propertyId] || []).find(p => String(p.id) === String(pid));
+    if (prompt) { preview.style.display='block'; preview.textContent = prompt.prompt || ''; }
+  };
+
+  window.removePrompt = async function(propertyId) {
+    try {
+      const currentUser = await getCurrentUser();
+      if (!currentUser) return;
+      const select = document.getElementById(`prompt-select-${propertyId}`);
+      const pid = select.value;
+      if (!pid) { showMessage('Select a prompt first', 'error'); return; }
+      const resp = await fetch('/.netlify/functions/delete-user-prompt', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ userId: currentUser.id, promptId: pid }) });
+      if (!resp.ok) { const t = await resp.text(); throw new Error(t || 'Delete failed'); }
+      showMessage('Prompt deleted', 'success');
+      await loadAllPrompts();
+      displaySavedProperties();
+    } catch (e) { showMessage(e.message || 'Delete failed', 'error'); }
+  };
+
+  window.editPrompt = async function(propertyId) {
+    try {
+      const currentUser = await getCurrentUser();
+      if (!currentUser) return;
+      const select = document.getElementById(`prompt-select-${propertyId}`);
+      const pid = select.value;
+      if (!pid) { showMessage('Select a prompt first', 'error'); return; }
+      const existing = (promptsByProperty[propertyId] || []).find(p => String(p.id) === String(pid));
+      const updated = prompt('Edit prompt text:', existing?.prompt || '');
+      if (updated == null) return;
+      const resp = await fetch('/.netlify/functions/update-user-prompt', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ userId: currentUser.id, promptId: pid, prompt: updated, module: existing?.module || null, template: existing?.template || null }) });
+      if (!resp.ok) { const t = await resp.text(); throw new Error(t || 'Update failed'); }
+      showMessage('Prompt updated', 'success');
+      await loadAllPrompts();
+      displaySavedProperties();
+    } catch (e) { showMessage(e.message || 'Update failed', 'error'); }
   };
 
   // Initialize the AI Prompt Builder
@@ -914,7 +1008,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // Show template selector for listing module (default)
   templateSelector.style.display = "block";
   
-  // Load saved properties on page load
+  // Load saved properties and prompts on page load
   loadSavedProperties();
   // Ensure and load prompts list on load
   ensureSavedPromptsSection();
