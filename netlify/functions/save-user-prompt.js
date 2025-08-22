@@ -2,7 +2,7 @@ import { getSupabaseConfig, supabaseHeaders } from './_supabase.js';
 
 export async function handler(event) {
   try {
-    const { userId, module, template, prompt, formData } = JSON.parse(event.body || '{}');
+    const { userId, module, template, prompt, formData, propertyId } = JSON.parse(event.body || '{}');
     if (!userId || !prompt) return { statusCode: 400, body: 'Missing userId or prompt' };
 
     const { url, serviceRoleKey } = getSupabaseConfig();
@@ -11,7 +11,8 @@ export async function handler(event) {
       module: module || null,
       template: template || null,
       prompt,
-      form_data: formData || {}
+      form_data: formData || {},
+      property_id: propertyId || null
     };
     const resp = await fetch(`${url}/rest/v1/user_prompts`, {
       method: 'POST',

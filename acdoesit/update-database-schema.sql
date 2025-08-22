@@ -20,6 +20,8 @@ CREATE TABLE IF NOT EXISTS user_prompts (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 CREATE INDEX IF NOT EXISTS idx_user_prompts_user_id ON user_prompts(user_id);
+ALTER TABLE user_prompts ADD COLUMN IF NOT EXISTS property_id INTEGER REFERENCES user_properties(id) ON DELETE SET NULL;
+CREATE INDEX IF NOT EXISTS idx_user_prompts_property_id ON user_prompts(property_id);
 CREATE INDEX IF NOT EXISTS idx_users_reset_token ON users(reset_token);
 
 -- 3. Update existing users to have last_login value (set to created_at for now)
