@@ -355,7 +355,7 @@ document.addEventListener("DOMContentLoaded", () => {
           <strong>Saved:</strong> ${new Date(savedDate).toLocaleDateString()}
         </div>
         <div class="property-actions" style="align-items:center; gap:8px; display:flex; justify-content:center; flex-wrap:wrap;">
-          <button class="property-btn property-btn-primary" onclick="loadProperty(${index})" title="Load Property" aria-label="Load Property">📝</button>
+          <button class="property-btn property-btn-primary" onclick="loadProperty(${index})" title="Load Property" aria-label="Load Property"> Load Property📝</button>
           <button class="property-btn property-btn-danger" onclick="deleteProperty(${index})" title="Delete Property" aria-label="Delete Property">🗑️</button>
         </div>
         <div class="property-details" style="margin-top:10px;">
