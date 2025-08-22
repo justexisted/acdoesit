@@ -339,7 +339,7 @@ document.addEventListener("DOMContentLoaded", () => {
               ${promptOptions}
             </select>
             <button class="property-btn" onclick="previewPrompt(${property.id})">Preview</button>
-            <button class="property-btn" onclick="editPrompt(${property.id})">Edit</button>
+            <button class="property-btn" id="edit-prompt-btn-${property.id}" onclick="editPrompt(${property.id})">Edit</button>
             <button class="property-btn property-btn-danger" onclick="removePrompt(${property.id})">Delete</button>
           </div>
           <div id="prompt-preview-${property.id}" class="preview" style="display:none; margin-top:8px;"></div>
@@ -904,19 +904,49 @@ document.addEventListener("DOMContentLoaded", () => {
   window.editPrompt = async function(propertyId) {
     try {
       const currentUser = await getCurrentUser();
-      if (!currentUser) return;
+      if (!currentUser) { showMessage('Please sign in to edit prompts', 'error'); return; }
       const select = document.getElementById(`prompt-select-${propertyId}`);
-      const pid = select.value;
-      if (!pid) { showMessage('Select a prompt first', 'error'); return; }
-      const existing = (promptsByProperty[propertyId] || []).find(p => String(p.id) === String(pid));
-      const updated = prompt('Edit prompt text:', existing?.prompt || '');
-      if (updated == null) return;
-      const resp = await fetch('/.netlify/functions/update-user-prompt', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ userId: currentUser.id, promptId: pid, prompt: updated, module: existing?.module || null, template: existing?.template || null }) });
-      if (!resp.ok) { const t = await resp.text(); throw new Error(t || 'Update failed'); }
+      const preview = document.getElementById(`prompt-preview-${propertyId}`);
+      const btn = document.getElementById(`edit-prompt-btn-${propertyId}`);
+      if (!select || !preview || !btn) return;
+      if (preview.style.display !== 'block') { showMessage('Open Preview first to edit', 'info'); return; }
+
+      const editing = btn.getAttribute('data-editing') === '1';
+      if (!editing) {
+        // Enter edit mode
+        preview.setAttribute('contenteditable', 'true');
+        preview.style.outline = '2px solid #d1d5db';
+        btn.textContent = 'Save';
+        btn.setAttribute('data-editing', '1');
+        preview.focus();
+        return;
+      }
+
+      // Save mode
+      const promptId = select.value;
+      if (!promptId) { showMessage('Select a prompt to edit', 'error'); return; }
+      const existing = (promptsByProperty[propertyId] || []).find(p => String(p.id) === String(promptId));
+      const updatedText = preview.textContent || '';
+      const resp = await fetch('/.netlify/functions/update-user-prompt', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: currentUser.id, promptId, prompt: updatedText, module: existing?.module || null, template: existing?.template || null })
+      });
+      if (!resp.ok) {
+        const t = await resp.text();
+        throw new Error(t || 'Failed to update prompt');
+      }
       showMessage('Prompt updated', 'success');
+      // Exit edit mode
+      preview.removeAttribute('contenteditable');
+      preview.style.outline = '';
+      btn.textContent = 'Edit';
+      btn.removeAttribute('data-editing');
       await loadAllPrompts();
       displaySavedProperties();
-    } catch (e) { showMessage(e.message || 'Update failed', 'error'); }
+    } catch (e) {
+      showMessage(e.message || 'Failed to update prompt', 'error');
+    }
   };
 
   // Initialize the AI Prompt Builder
