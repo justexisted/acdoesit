@@ -444,6 +444,7 @@ class AuthSystem {
     try {
       localStorage.setItem('sessionUserId', sanitizedUser.id);
       if (sanitizedUser.email) localStorage.setItem('sessionEmail', sanitizedUser.email);
+      localStorage.setItem('currentUser', JSON.stringify(sanitizedUser));
     } catch (e) {}
     
     // Update UI
@@ -489,7 +490,7 @@ class AuthSystem {
     // Attempt to clear server-side session first
     await this.clearUserSession(previousUserId);
     // Clear local persisted session id
-    try { localStorage.removeItem('sessionUserId'); localStorage.removeItem('sessionEmail'); } catch (e) {}
+    try { localStorage.removeItem('sessionUserId'); localStorage.removeItem('sessionEmail'); localStorage.removeItem('currentUser'); } catch (e) {}
     // Clear local auth state
     this.currentUser = null;
     this.isAuthenticated = false;
@@ -632,6 +633,7 @@ class AuthSystem {
         console.log('Mapped user data:', this.currentUser);
         this.isAuthenticated = true;
         this.updateAuthUI();
+        try { localStorage.setItem('currentUser', JSON.stringify(this.currentUser)); } catch (e) {}
         // Notify other pages/components that a session has been restored
         window.dispatchEvent(new CustomEvent('userSignedIn', { detail: this.currentUser }));
       } else {
