@@ -356,7 +356,7 @@ document.addEventListener("DOMContentLoaded", () => {
         </div>
         <div class="property-actions" style="align-items:center; gap:8px; display:flex; justify-content:center; flex-wrap:wrap;">
           <button class="property-btn property-btn-primary" onclick="loadProperty(${index})" title="Load Property" aria-label="Load Property"> Load Property📝</button>
-          <button class="property-btn property-btn-danger" onclick="deleteProperty(${index})" title="Delete Property" aria-label="Delete Property">🗑️</button>
+          <button class="property-btn property-btn-danger" onclick="deleteProperty(${index}, this)" title="Delete Property" aria-label="Delete Property">🗑️</button>
         </div>
         <div class="property-details" style="margin-top:10px;">
           <strong>Saved Prompts:</strong>
@@ -368,7 +368,7 @@ document.addEventListener("DOMContentLoaded", () => {
             <button class="property-btn" onclick="previewPrompt(${property.id})" title="Preview" aria-label="Preview">👁️</button>
             <button class="property-btn" id="edit-prompt-btn-${property.id}" onclick="editPrompt(${property.id})" title="Edit" aria-label="Edit">✏️</button>
             <button class="property-btn" onclick="copySavedPrompt(${property.id}, this)" title="Copy to clipboard" aria-label="Copy to clipboard">📋</button>
-            <button class="property-btn property-btn-danger" onclick="removePrompt(${property.id})" title="Delete" aria-label="Delete">🗑️</button>
+            <button class="property-btn property-btn-danger" onclick="removePrompt(${property.id}, this)" title="Delete" aria-label="Delete">🗑️</button>
           </div>
           <div id="prompt-preview-${property.id}" class="preview" style="display:none; margin-top:8px;"></div>
         </div>
@@ -400,7 +400,7 @@ document.addEventListener("DOMContentLoaded", () => {
   };
 
   // Delete property
-  window.deleteProperty = async function(index) {
+  window.deleteProperty = async function(index, el) {
     if (confirm('Are you sure you want to delete this saved property?')) {
       try {
         const currentUser = await getCurrentUser();
@@ -416,6 +416,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         // Delete from database
+        addSpinnerToButton(el);
         const response = await fetch('/.netlify/functions/delete-user-property', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -437,6 +438,8 @@ document.addEventListener("DOMContentLoaded", () => {
       } catch (error) {
         console.error('Error deleting property:', error);
         showMessage('Failed to delete property. Please try again.', 'error');
+      } finally {
+        removeSpinnerFromButton(el);
       }
     }
   };
@@ -638,6 +641,34 @@ document.addEventListener("DOMContentLoaded", () => {
     }, 3000);
   }
 
+  // Minimal inline spinner helpers for async actions
+  function ensureSpinnerStyles() {
+    if (document.getElementById('btn-spinner-style')) return;
+    const style = document.createElement('style');
+    style.id = 'btn-spinner-style';
+    style.textContent = `@keyframes spin{to{transform:rotate(360deg)}}.btn-spinner{display:inline-block;width:14px;height:14px;border:2px solid #d1d5db;border-top-color:#374151;border-radius:50%;animation:spin .6s linear infinite;margin-left:6px;vertical-align:middle;}`;
+    document.head.appendChild(style);
+  }
+
+  function addSpinnerToButton(buttonEl) {
+    if (!buttonEl) return;
+    ensureSpinnerStyles();
+    if (buttonEl.querySelector('.btn-spinner')) return;
+    const spinner = document.createElement('span');
+    spinner.className = 'btn-spinner';
+    buttonEl.appendChild(spinner);
+    buttonEl.setAttribute('aria-busy', 'true');
+    buttonEl.disabled = true;
+  }
+
+  function removeSpinnerFromButton(buttonEl) {
+    if (!buttonEl) return;
+    const spinner = buttonEl.querySelector('.btn-spinner');
+    if (spinner && spinner.parentNode) spinner.parentNode.removeChild(spinner);
+    buttonEl.removeAttribute('aria-busy');
+    buttonEl.disabled = false;
+  }
+
   function renderForm() {
     const { fields } = Modules[activeModule];
     formEl.innerHTML = fields.map(field => {
@@ -798,7 +829,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  async function savePrompt() {
+  async function savePrompt(buttonEl) {
     const text = previewEl.textContent;
     if (!text) {
       alert("No prompt to save. Please generate a prompt first.");
@@ -815,6 +846,7 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
     try {
+      addSpinnerToButton(buttonEl || savePromptBtn);
       const resp = await fetch('/.netlify/functions/save-user-prompt', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -836,10 +868,12 @@ document.addEventListener("DOMContentLoaded", () => {
       displaySavedProperties();
     } catch (e) {
       showMessage(e.message || 'Failed to save prompt', 'error');
+    } finally {
+      removeSpinnerFromButton(buttonEl || savePromptBtn);
     }
   }
 
-  function savePromptWrapper() { savePrompt(); }
+  function savePromptWrapper(e) { savePrompt(e?.target); }
 
   function generatePrompt() {
     const values = getValues();
@@ -905,19 +939,21 @@ document.addEventListener("DOMContentLoaded", () => {
     if (prompt) { preview.style.display='block'; preview.textContent = prompt.prompt || ''; }
   };
 
-  window.removePrompt = async function(propertyId) {
+  window.removePrompt = async function(propertyId, el) {
     try {
       const currentUser = await getCurrentUser();
       if (!currentUser) return;
       const select = document.getElementById(`prompt-select-${propertyId}`);
       const pid = select.value;
       if (!pid) { showMessage('Select a prompt first', 'error'); return; }
+      addSpinnerToButton(el);
       const resp = await fetch('/.netlify/functions/delete-user-prompt', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ userId: currentUser.id, promptId: pid }) });
       if (!resp.ok) { const t = await resp.text(); throw new Error(t || 'Delete failed'); }
       showMessage('Prompt deleted', 'success');
       await loadAllPrompts();
       displaySavedProperties();
     } catch (e) { showMessage(e.message || 'Delete failed', 'error'); }
+    finally { removeSpinnerFromButton(el); }
   };
 
   window.copySavedPrompt = async function(propertyId, el) {
@@ -969,6 +1005,7 @@ document.addEventListener("DOMContentLoaded", () => {
       if (!promptId) { showMessage('Select a prompt to edit', 'error'); return; }
       const existing = (promptsByProperty[propertyId] || []).find(p => String(p.id) === String(promptId));
       const updatedText = preview.textContent || '';
+      addSpinnerToButton(btn);
       const resp = await fetch('/.netlify/functions/update-user-prompt', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -990,6 +1027,9 @@ document.addEventListener("DOMContentLoaded", () => {
       displaySavedProperties();
     } catch (e) {
       showMessage(e.message || 'Failed to update prompt', 'error');
+    } finally {
+      const btn = document.getElementById(`edit-prompt-btn-${propertyId}`);
+      if (btn) removeSpinnerFromButton(btn);
     }
   };
 
