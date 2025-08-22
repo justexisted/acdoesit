@@ -136,8 +136,11 @@ document.addEventListener("DOMContentLoaded", () => {
   // Load saved properties from database
   async function loadSavedProperties() {
     try {
-      // Get current user from auth system instead of localStorage
-      const currentUser = window.authSystem ? window.authSystem.currentUser : null;
+      // Prefer auth system; fallback to localStorage
+      let currentUser = window.authSystem ? window.authSystem.currentUser : null;
+      if (!currentUser) {
+        try { const stored = localStorage.getItem('currentUser'); if (stored) currentUser = JSON.parse(stored); } catch (e) {}
+      }
       if (!currentUser) {
         console.log('No authenticated user found');
         savedProperties = [];
@@ -193,8 +196,11 @@ document.addEventListener("DOMContentLoaded", () => {
   // Save current property to database
   async function saveCurrentProperty() {
     try {
-      // Get current user from auth system instead of localStorage
-      const currentUser = window.authSystem ? window.authSystem.currentUser : null;
+      // Prefer auth system; fallback to localStorage
+      let currentUser = window.authSystem ? window.authSystem.currentUser : null;
+      if (!currentUser) {
+        try { const stored = localStorage.getItem('currentUser'); if (stored) currentUser = JSON.parse(stored); } catch (e) {}
+      }
       if (!currentUser) {
         showMessage('Please sign in to save properties', 'error');
         return;
@@ -713,7 +719,10 @@ document.addEventListener("DOMContentLoaded", () => {
       alert("No prompt to save. Please generate a prompt first.");
       return;
     }
-    const currentUser = window.authSystem ? window.authSystem.currentUser : null;
+    let currentUser = window.authSystem ? window.authSystem.currentUser : null;
+    if (!currentUser) {
+      try { const stored = localStorage.getItem('currentUser'); if (stored) currentUser = JSON.parse(stored); } catch (e) {}
+    }
     if (!currentUser) {
       showMessage('Please sign in to save prompts', 'error');
       return;
