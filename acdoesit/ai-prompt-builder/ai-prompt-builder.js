@@ -707,22 +707,37 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  function savePrompt() {
+  async function savePrompt() {
     const text = previewEl.textContent;
     if (!text) {
       alert("No prompt to save. Please generate a prompt first.");
       return;
     }
-    
-    // Track save attempt - temporarily disabled to prevent 502 errors
-    // trackUserActivity('prompt_copied', {
-    //   module: activeModule,
-    //   template: activeTemplate,
-    //   prompt_length: text.length
-    // });
-    
-    // For now, just show a success message
-    showMessage('Prompt saved to your account! You can access it later.', 'success');
+    const currentUser = window.authSystem ? window.authSystem.currentUser : null;
+    if (!currentUser) {
+      showMessage('Please sign in to save prompts', 'error');
+      return;
+    }
+    try {
+      const resp = await fetch('/.netlify/functions/save-user-prompt', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: currentUser.id,
+          module: activeModule,
+          template: activeTemplate,
+          prompt: text,
+          formData: getValues()
+        })
+      });
+      if (!resp.ok) {
+        const t = await resp.text();
+        throw new Error(t || 'Failed to save prompt');
+      }
+      showMessage('Prompt saved to your account! You can access it later.', 'success');
+    } catch (e) {
+      showMessage(e.message || 'Failed to save prompt', 'error');
+    }
   }
 
   // Global functions for saving addresses and neighborhoods
@@ -836,7 +851,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   generateBtn.addEventListener("click", generatePrompt);
   copyBtn.addEventListener("click", copyToClipboard);
-  savePromptBtn.addEventListener("click", savePrompt);
+  savePromptBtn.addEventListener("click", () => { savePrompt(); });
   savePropertyBtn.addEventListener("click", saveCurrentProperty);
 
   // Initialize the form

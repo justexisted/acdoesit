@@ -9,6 +9,17 @@ ALTER TABLE users ADD COLUMN IF NOT EXISTS reset_token_expires_at TIMESTAMP WITH
 
 -- 2. Create missing indexes
 CREATE INDEX IF NOT EXISTS idx_users_last_login ON users(last_login);
+-- 6. Create user_prompts table if missing
+CREATE TABLE IF NOT EXISTS user_prompts (
+  id SERIAL PRIMARY KEY,
+  user_id TEXT REFERENCES users(id) ON DELETE CASCADE,
+  module TEXT,
+  template TEXT,
+  prompt TEXT NOT NULL,
+  form_data JSONB DEFAULT '{}',
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_user_prompts_user_id ON user_prompts(user_id);
 CREATE INDEX IF NOT EXISTS idx_users_reset_token ON users(reset_token);
 
 -- 3. Update existing users to have last_login value (set to created_at for now)

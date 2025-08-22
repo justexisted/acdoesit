@@ -40,6 +40,17 @@ CREATE TABLE IF NOT EXISTS user_activity (
   timestamp TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
+-- 4. Create user_prompts table for saving generated prompts
+CREATE TABLE IF NOT EXISTS user_prompts (
+  id SERIAL PRIMARY KEY,
+  user_id TEXT REFERENCES users(id) ON DELETE CASCADE,
+  module TEXT,
+  template TEXT,
+  prompt TEXT NOT NULL,
+  form_data JSONB DEFAULT '{}',
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
 -- 4. Create indexes for better performance
 CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
 CREATE INDEX IF NOT EXISTS idx_users_created_at ON users(created_at);
@@ -48,6 +59,7 @@ CREATE INDEX IF NOT EXISTS idx_users_reset_token ON users(reset_token);
 CREATE INDEX IF NOT EXISTS idx_user_properties_user_id ON user_properties(user_id);
 CREATE INDEX IF NOT EXISTS idx_user_activity_user_id ON user_activity(user_id);
 CREATE INDEX IF NOT EXISTS idx_user_activity_action ON user_activity(action);
+CREATE INDEX IF NOT EXISTS idx_user_prompts_user_id ON user_prompts(user_id);
 
 -- 5. Enable Row Level Security (RLS)
 ALTER TABLE users ENABLE ROW LEVEL SECURITY;
