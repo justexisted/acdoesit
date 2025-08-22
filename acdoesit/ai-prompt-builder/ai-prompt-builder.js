@@ -354,20 +354,21 @@ document.addEventListener("DOMContentLoaded", () => {
           <strong>Module:</strong> ${property.module || 'Unknown'}<br>
           <strong>Saved:</strong> ${new Date(savedDate).toLocaleDateString()}
         </div>
-        <div class="property-actions" style="align-items:center; gap:8px;">
-          <button class="property-btn property-btn-primary" onclick="loadProperty(${index})">📝 Load Property</button>
-          <button class="property-btn property-btn-danger" onclick="deleteProperty(${index})">🗑️ Delete</button>
+        <div class="property-actions" style="align-items:center; gap:8px; display:flex; justify-content:center; flex-wrap:wrap;">
+          <button class="property-btn property-btn-primary" onclick="loadProperty(${index})" title="Load Property" aria-label="Load Property">📝</button>
+          <button class="property-btn property-btn-danger" onclick="deleteProperty(${index})" title="Delete Property" aria-label="Delete Property">🗑️</button>
         </div>
         <div class="property-details" style="margin-top:10px;">
           <strong>Saved Prompts:</strong>
-          <div class="action-buttons" style="margin-top:8px;">
+          <div class="action-buttons" style="margin-top:8px; display:flex; align-items:center; justify-content:center; gap:8px; flex-wrap:wrap;">
             <select id="prompt-select-${property.id}" class="btn" style="background:#fff;color:#374151;border:1px solid #d1d5db;">
               <option value="">Select a saved prompt…</option>
               ${promptOptions}
             </select>
-            <button class="property-btn" onclick="previewPrompt(${property.id})">Preview</button>
-            <button class="property-btn" id="edit-prompt-btn-${property.id}" onclick="editPrompt(${property.id})">Edit</button>
-            <button class="property-btn property-btn-danger" onclick="removePrompt(${property.id})">Delete</button>
+            <button class="property-btn" onclick="previewPrompt(${property.id})" title="Preview" aria-label="Preview">👁️</button>
+            <button class="property-btn" id="edit-prompt-btn-${property.id}" onclick="editPrompt(${property.id})" title="Edit" aria-label="Edit">✏️</button>
+            <button class="property-btn" onclick="copySavedPrompt(${property.id}, this)" title="Copy to clipboard" aria-label="Copy to clipboard">📋</button>
+            <button class="property-btn property-btn-danger" onclick="removePrompt(${property.id})" title="Delete" aria-label="Delete">🗑️</button>
           </div>
           <div id="prompt-preview-${property.id}" class="preview" style="display:none; margin-top:8px;"></div>
         </div>
@@ -919,6 +920,27 @@ document.addEventListener("DOMContentLoaded", () => {
     } catch (e) { showMessage(e.message || 'Delete failed', 'error'); }
   };
 
+  window.copySavedPrompt = async function(propertyId, el) {
+    try {
+      const select = document.getElementById(`prompt-select-${propertyId}`);
+      if (!select) { showMessage('Select not found', 'error'); return; }
+      const pid = select.value;
+      if (!pid) { showMessage('Select a prompt first', 'error'); return; }
+      const prompt = (promptsByProperty[propertyId] || []).find(p => String(p.id) === String(pid));
+      const text = prompt?.prompt || '';
+      if (!text) { showMessage('No prompt text to copy', 'error'); return; }
+      await navigator.clipboard.writeText(text);
+      if (el) {
+        const previous = el.textContent;
+        el.textContent = '✅';
+        setTimeout(() => { el.textContent = '📋'; }, 1500);
+      }
+      showMessage('Copied to clipboard', 'success');
+    } catch (e) {
+      showMessage('Failed to copy', 'error');
+    }
+  };
+
   window.editPrompt = async function(propertyId) {
     try {
       const currentUser = await getCurrentUser();
@@ -934,7 +956,9 @@ document.addEventListener("DOMContentLoaded", () => {
         // Enter edit mode
         preview.setAttribute('contenteditable', 'true');
         preview.style.outline = '2px solid #d1d5db';
-        btn.textContent = 'Save';
+        btn.textContent = '💾';
+        btn.setAttribute('title', 'Save');
+        btn.setAttribute('aria-label', 'Save');
         btn.setAttribute('data-editing', '1');
         preview.focus();
         return;
@@ -958,7 +982,9 @@ document.addEventListener("DOMContentLoaded", () => {
       // Exit edit mode
       preview.removeAttribute('contenteditable');
       preview.style.outline = '';
-      btn.textContent = 'Edit';
+      btn.textContent = '✏️';
+      btn.setAttribute('title', 'Edit');
+      btn.setAttribute('aria-label', 'Edit');
       btn.removeAttribute('data-editing');
       await loadAllPrompts();
       displaySavedProperties();
