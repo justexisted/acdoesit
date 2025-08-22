@@ -712,27 +712,43 @@
     <script src="ai-prompt-builder.js"></script>
     <script>
         // Check authentication and show appropriate content
-        function checkAuthAndShowContent() {
-            // Wait for auth system to be available
-            if (!window.authSystem) {
-                setTimeout(checkAuthAndShowContent, 100);
-                return;
-            }
-
+        async function checkAuthAndShowContent() {
             const authRequired = document.getElementById('auth-required');
             const appContent = document.getElementById('app-content');
             const userGreeting = document.getElementById('user-greeting');
 
-            if (window.authSystem.isAuthenticated && window.authSystem.currentUser) {
-                // User is authenticated
+            // Prefer client auth state if available
+            if (window.authSystem && window.authSystem.isAuthenticated && window.authSystem.currentUser) {
                 authRequired.style.display = 'none';
                 appContent.style.display = 'block';
-                userGreeting.textContent = `Welcome, ${window.authSystem.currentUser.firstName}!`;
-            } else {
-                // User is not authenticated
-                authRequired.style.display = 'block';
-                appContent.style.display = 'none';
+                if (userGreeting) userGreeting.textContent = `Welcome, ${window.authSystem.currentUser.firstName}!`;
+                return;
             }
+
+            // Server fallback: check session cookie directly
+            try {
+                let email = null;
+                try { email = localStorage.getItem('sessionEmail'); } catch (e) {}
+                const resp = await fetch('/.netlify/functions/check-session', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email })
+                });
+                if (resp.ok) {
+                    const data = await resp.json();
+                    if (data && data.user) {
+                        authRequired.style.display = 'none';
+                        appContent.style.display = 'block';
+                        if (userGreeting) userGreeting.textContent = `Welcome, ${data.user.first_name || ''}!`;
+                        return;
+                    }
+                }
+            } catch (e) {
+                // ignore, fall back to showing auth-required
+            }
+
+            authRequired.style.display = 'block';
+            appContent.style.display = 'none';
         }
 
         // Check auth on page load
