@@ -17,11 +17,7 @@ export async function handler(event, context) {
     const { url, serviceRoleKey } = getSupabaseConfig();
     const table = 'user_properties';
     
-    console.log('Using Supabase config:', {
-      url: url,
-      key: key ? 'configured' : 'missing',
-      table: table
-    });
+    console.log('Using Supabase config:', { url, table });
 
     // Prepare property data for database
     const dbPropertyData = {
