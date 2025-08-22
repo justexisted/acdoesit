@@ -48,7 +48,8 @@ CREATE TABLE IF NOT EXISTS user_prompts (
   template TEXT,
   prompt TEXT NOT NULL,
   form_data JSONB DEFAULT '{}',
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE
 );
 
 -- 4. Create indexes for better performance

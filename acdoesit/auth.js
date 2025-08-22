@@ -117,6 +117,7 @@ class AuthSystem {
     e.preventDefault();
     
     try {
+      this.showLoader();
       const firstName = document.getElementById('signUpFirstName').value.trim();
       const lastName = document.getElementById('signUpLastName').value.trim();
       const email = document.getElementById('signUpEmail').value.trim();
@@ -149,6 +150,8 @@ class AuthSystem {
       
     } catch (error) {
       this.showMessage(error.message, 'error');
+    } finally {
+      this.hideLoader();
     }
   }
 
@@ -156,6 +159,7 @@ class AuthSystem {
     e.preventDefault();
     
     try {
+      this.showLoader();
       const email = document.getElementById('signInEmail').value.trim();
       const password = document.getElementById('signInPassword').value;
 
@@ -201,6 +205,8 @@ class AuthSystem {
       
     } catch (error) {
       this.showMessage(error.message, 'error');
+    } finally {
+      this.hideLoader();
     }
   }
 
@@ -208,6 +214,7 @@ class AuthSystem {
     e.preventDefault();
     
     try {
+      this.showLoader();
       const email = document.getElementById('resetEmail').value.trim();
       
       if (!email) {
@@ -228,6 +235,8 @@ class AuthSystem {
       
     } catch (error) {
       this.showMessage(error.message, 'error');
+    } finally {
+      this.hideLoader();
     }
   }
 
@@ -477,6 +486,7 @@ class AuthSystem {
   }
 
   async signOut() {
+    this.showLoader();
     // Use current user id or persisted session id for deterministic server clear
     const previousUserId = this.currentUser?.id || (typeof localStorage !== 'undefined' ? localStorage.getItem('sessionUserId') : null);
     // Clear server cookie-based session
@@ -498,6 +508,7 @@ class AuthSystem {
     this.updateAuthUI();
     // Trigger custom event
     window.dispatchEvent(new CustomEvent('userSignedOut'));
+    this.hideLoader();
   }
 
   async clearUserSession(userId) {
@@ -517,6 +528,7 @@ class AuthSystem {
 
   async handleGoogleUser(user) {
     try {
+      this.showLoader();
       // Check if user already exists
       const existingUser = await this.checkUserExists(user.email);
       
@@ -547,6 +559,8 @@ class AuthSystem {
     } catch (error) {
       console.error('Error handling Google user:', error);
       this.showMessage('Error signing in with Google. Please try again.', 'error');
+    } finally {
+      this.hideLoader();
     }
   }
 
@@ -715,6 +729,31 @@ class AuthSystem {
         }
       }, 300);
     }, 3000);
+  }
+
+  // Loading overlay helpers
+  showLoader() {
+    if (document.getElementById('auth-loading-overlay')) return;
+    if (!document.getElementById('auth-loading-styles')) {
+      const style = document.createElement('style');
+      style.id = 'auth-loading-styles';
+      style.textContent = `
+        @keyframes auth-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+      `;
+      document.head.appendChild(style);
+    }
+    const overlay = document.createElement('div');
+    overlay.id = 'auth-loading-overlay';
+    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.35);display:flex;align-items:center;justify-content:center;z-index:4000;backdrop-filter:saturate(120%) blur(2px)';
+    const spinner = document.createElement('div');
+    spinner.style.cssText = 'width:48px;height:48px;border:4px solid #fff;border-top-color:transparent;border-radius:50%;animation:auth-spin 0.8s linear infinite';
+    overlay.appendChild(spinner);
+    document.body.appendChild(overlay);
+  }
+
+  hideLoader() {
+    const overlay = document.getElementById('auth-loading-overlay');
+    if (overlay && overlay.parentNode) overlay.parentNode.removeChild(overlay);
   }
 
   closeAllModals() {
