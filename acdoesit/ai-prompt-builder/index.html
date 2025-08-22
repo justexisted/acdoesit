@@ -55,6 +55,7 @@
         }
 
         .header-top {
+            width: 100%;
             display: flex;
             align-items: center;
             justify-content: space-between;
@@ -639,7 +640,7 @@
             <div class="auth-buttons">
                 <a href="../index.html#signup" class="auth-btn">Sign Up</a>
                 <a href="../index.html#signin" class="auth-btn auth-btn-secondary">Sign In</a>
-                <a href="../index.html" class="auth-btn auth-btn-secondary">← Back to Home</a>
+                <a href="../index.html" class="auth-btn auth-btn-secondary">← Back</a>
             </div>
         </div>
 
@@ -647,13 +648,16 @@
         <div id="app-content" style="display: none;">
             <div class="header">
                 <div class="header-top">
-                    <a href="../index.html" class="back-btn">← Back to Home</a>
-                    <h1>🏠 AI Prompt Builder</h1>
+                    <a href="../index.html" class="back-btn">← Back</a>
                     <div class="user-welcome">
                         <span id="user-greeting">Welcome!</span>
-                        <button onclick="signOut()" class="btn" style="font-size: 0.9rem;">Sign Out</button>
+                        <button onclick="signOut()" class="btn sign-out-btn" style="font-size: 0.9rem;">Sign Out</button>
                     </div>
                 </div>
+            </div>
+
+            <div class="header-bottom">
+                <h1>🏠 AI Prompt Builder</h1>
             </div>
 
             <!-- Saved Properties Section -->
