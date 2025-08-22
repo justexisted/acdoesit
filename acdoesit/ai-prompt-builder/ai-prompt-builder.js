@@ -83,6 +83,29 @@ document.addEventListener("DOMContentLoaded", () => {
   const savedPropertiesSection = document.getElementById("saved-properties");
   const propertyList = document.getElementById("property-list");
 
+  function ensureSavedPropertiesSection() {
+    let section = document.getElementById('saved-properties');
+    if (!section) {
+      section = document.createElement('div');
+      section.id = 'saved-properties';
+      section.className = 'saved-properties';
+      section.style.display = 'none';
+      section.innerHTML = `
+        <h3>💾 Saved Properties</h3>
+        <div class="property-list" id="property-list"></div>
+      `;
+      document.querySelector('.ai-prompt-builder')?.appendChild(section);
+    }
+    let list = document.getElementById('property-list');
+    if (!list) {
+      list = document.createElement('div');
+      list.id = 'property-list';
+      list.className = 'property-list';
+      section.appendChild(list);
+    }
+    return { section, list };
+  }
+
   // Server-driven current user (uses HttpOnly cookie)
   async function getCurrentUser() {
     try {
@@ -163,7 +186,9 @@ document.addEventListener("DOMContentLoaded", () => {
       if (!currentUser) {
         console.log('No authenticated user found');
         savedProperties = [];
-        displaySavedProperties();
+        const { section, list } = ensureSavedPropertiesSection();
+        section.style.display = 'none';
+        list.innerHTML = '';
         return;
       }
 
@@ -291,13 +316,15 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Display saved properties
   function displaySavedProperties() {
+    const { section, list } = ensureSavedPropertiesSection();
     if (savedProperties.length === 0) {
-      savedPropertiesSection.style.display = 'none';
+      section.style.display = 'none';
+      list.innerHTML = '';
       return;
     }
 
-    savedPropertiesSection.style.display = 'block';
-    propertyList.innerHTML = '';
+    section.style.display = 'block';
+    list.innerHTML = '';
 
     savedProperties.forEach((property, index) => {
       const propertyEl = document.createElement('div');
@@ -346,7 +373,7 @@ document.addEventListener("DOMContentLoaded", () => {
         </div>
       `;
       
-      propertyList.appendChild(propertyEl);
+      list.appendChild(propertyEl);
     });
   }
 
