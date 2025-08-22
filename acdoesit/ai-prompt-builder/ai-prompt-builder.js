@@ -82,11 +82,33 @@ document.addEventListener("DOMContentLoaded", () => {
   const savedPropertiesSection = document.getElementById("saved-properties");
   const propertyList = document.getElementById("property-list");
 
+  // Server-driven current user (uses HttpOnly cookie)
+  async function getCurrentUser() {
+    try {
+      const resp = await fetch('/.netlify/functions/check-session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      });
+      if (!resp.ok) return null;
+      const data = await resp.json();
+      if (data && data.user) {
+        return {
+          id: data.user.id,
+          email: data.user.email,
+          firstName: data.user.first_name || data.user.firstName,
+          lastName: data.user.last_name || data.user.lastName
+        };
+      }
+      return null;
+    } catch {
+      return null;
+    }
+  }
+
   // User Activity Tracking Functions
   async function trackUserActivity(action, details = {}) {
     try {
-      // Get current user from localStorage
-      const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+      const currentUser = await getCurrentUser();
       if (!currentUser || !currentUser.id) {
         console.log('No authenticated user found for activity tracking');
         return;
@@ -136,11 +158,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // Load saved properties from database
   async function loadSavedProperties() {
     try {
-      // Prefer auth system; fallback to localStorage
-      let currentUser = window.authSystem ? window.authSystem.currentUser : null;
-      if (!currentUser) {
-        try { const stored = localStorage.getItem('currentUser'); if (stored) currentUser = JSON.parse(stored); } catch (e) {}
-      }
+      const currentUser = await getCurrentUser();
       if (!currentUser) {
         console.log('No authenticated user found');
         savedProperties = [];
@@ -166,7 +184,6 @@ document.addEventListener("DOMContentLoaded", () => {
         
         // Update the saved properties array
         savedProperties = properties.map(prop => ({
-          // Map database snake_case fields to frontend camelCase fields
           id: prop.id,
           userId: prop.user_id,
           propertyName: prop.property_name,
@@ -177,13 +194,10 @@ document.addEventListener("DOMContentLoaded", () => {
           uniqueFeatures: prop.unique_features,
           module: prop.module,
           createdAt: prop.created_at,
-          // Keep the original form data for populating forms
           formData: prop.form_data || {}
         }));
         
         console.log('Mapped saved properties:', savedProperties);
-        
-        // Display the properties
         displaySavedProperties();
       } else {
         console.log('Failed to load properties from database');
@@ -196,11 +210,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // Save current property to database
   async function saveCurrentProperty() {
     try {
-      // Prefer auth system; fallback to localStorage
-      let currentUser = window.authSystem ? window.authSystem.currentUser : null;
-      if (!currentUser) {
-        try { const stored = localStorage.getItem('currentUser'); if (stored) currentUser = JSON.parse(stored); } catch (e) {}
-      }
+      const currentUser = await getCurrentUser();
       if (!currentUser) {
         showMessage('Please sign in to save properties', 'error');
         return;
@@ -212,7 +222,6 @@ document.addEventListener("DOMContentLoaded", () => {
         return;
       }
 
-      // Create property data
       const propertyData = {
         propertyName: values.Property_Address || values.Parcel_Address_or_APN || 'Unnamed Property',
         address: values.Property_Address || values.Parcel_Address_or_APN || '',
@@ -226,7 +235,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
       console.log('Saving property to database:', propertyData);
 
-      // Save to database
       const response = await fetch('/.netlify/functions/save-user-property', {
         method: 'POST',
         headers: {
@@ -240,30 +248,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
       if (response.ok) {
         showMessage('Property saved successfully! You can return to it anytime.', 'success');
-        
-        // Reload saved properties
         await loadSavedProperties();
-        
-        // Track user activity - temporarily disabled to prevent 502 errors
-        // trackUserActivity('property_saved', {
-        //   property_name: propertyData.propertyName,
-        //   address: propertyData.address,
-        //   neighborhood: propertyData.neighborhood
-        // });
       } else {
         const errorText = await response.text();
         console.error('Property save error response:', errorText);
-        
-        // Try to parse the error for better user feedback
-        try {
-          const errorData = JSON.parse(errorText);
-          if (errorData.message && errorData.message.includes('User not found')) {
-            throw new Error('User authentication error. Please refresh the page and try again.');
-          }
-        } catch (parseError) {
-          // If we can't parse the error, use the original text
-        }
-        
         throw new Error(`Failed to save property: ${errorText}`);
       }
     } catch (error) {
@@ -342,8 +330,7 @@ document.addEventListener("DOMContentLoaded", () => {
   window.deleteProperty = async function(index) {
     if (confirm('Are you sure you want to delete this saved property?')) {
       try {
-        // Get current user from auth system instead of localStorage
-        const currentUser = window.authSystem ? window.authSystem.currentUser : null;
+        const currentUser = await getCurrentUser();
         if (!currentUser) {
           showMessage('Please sign in to delete properties', 'error');
           return;
@@ -666,30 +653,6 @@ document.addEventListener("DOMContentLoaded", () => {
     return result;
   }
 
-  function generatePrompt() {
-    const values = getValues();
-    
-    let template;
-    if (activeModule === "listing" && Modules[activeModule].templates) {
-      template = Modules[activeModule].templates[activeTemplate];
-    } else {
-      template = Modules[activeModule].template;
-    }
-    
-    const compiledPrompt = compile(template, values);
-    previewEl.textContent = compiledPrompt;
-    previewContainer.style.display = "block";
-    previewContainer.scrollIntoView({ behavior: "smooth" });
-    
-    // Track prompt generation - temporarily disabled to prevent 502 errors
-    // trackUserActivity('prompt_generated', {
-    //   module: activeModule,
-    //   template: activeTemplate,
-    //   fields_filled: Object.keys(values).filter(key => values[key] && values[key].trim()).length,
-    //   total_fields: Object.keys(values).length
-    // });
-  }
-
   async function copyToClipboard() {
     const text = previewEl.textContent;
     if (!text) {
@@ -713,16 +676,71 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
+  // Inject Saved Prompts section dynamically so we don't depend on HTML edits
+  function ensureSavedPromptsSection() {
+    let section = document.getElementById('saved-prompts');
+    if (!section) {
+      section = document.createElement('div');
+      section.id = 'saved-prompts';
+      section.className = 'saved-properties';
+      section.style.display = 'none';
+      section.innerHTML = `
+        <h3>📝 Saved Prompts</h3>
+        <div class="action-buttons" style="margin-top:0;">
+          <select id="prompt-select" class="btn" style="background:#fff;color:#374151;border:1px solid #d1d5db;">
+            <option value="">Select a saved prompt…</option>
+          </select>
+        </div>
+        <div id="prompt-preview" class="preview" style="display:none;"></div>
+      `;
+      const propertiesSection = document.getElementById('saved-properties');
+      if (propertiesSection && propertiesSection.parentNode) {
+        propertiesSection.parentNode.insertBefore(section, propertiesSection.nextSibling);
+      } else {
+        document.querySelector('.ai-prompt-builder')?.appendChild(section);
+      }
+    }
+    return section;
+  }
+
+  async function loadSavedPrompts() {
+    try {
+      const currentUser = await getCurrentUser();
+      if (!currentUser) return;
+      ensureSavedPromptsSection();
+      const section = document.getElementById('saved-prompts');
+      const select = document.getElementById('prompt-select');
+      const preview = document.getElementById('prompt-preview');
+      const resp = await fetch('/.netlify/functions/get-user-prompts', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId: currentUser.id })
+      });
+      if (!resp.ok) { section.style.display = 'none'; return; }
+      const prompts = await resp.json();
+      if (!Array.isArray(prompts) || prompts.length === 0) { section.style.display = 'none'; return; }
+      section.style.display = 'block';
+      select.innerHTML = '<option value="">Select a saved prompt…</option>' + prompts.map(p => {
+        const label = `${p.module || 'listing'} ${p.template || ''} — ${new Date(p.created_at).toLocaleString()}`;
+        return `<option data-prompt="${encodeURIComponent(p.prompt || '')}" value="${p.id}">${label}</option>`;
+      }).join('');
+      select.onchange = () => {
+        const opt = select.options[select.selectedIndex];
+        const val = opt ? decodeURIComponent(opt.getAttribute('data-prompt') || '') : '';
+        if (val) { preview.style.display = 'block'; preview.textContent = val; }
+        else { preview.style.display = 'none'; preview.textContent = ''; }
+      };
+    } catch (e) {
+      const section = document.getElementById('saved-prompts');
+      if (section) section.style.display = 'none';
+    }
+  }
+
   async function savePrompt() {
     const text = previewEl.textContent;
     if (!text) {
       alert("No prompt to save. Please generate a prompt first.");
       return;
     }
-    let currentUser = window.authSystem ? window.authSystem.currentUser : null;
-    if (!currentUser) {
-      try { const stored = localStorage.getItem('currentUser'); if (stored) currentUser = JSON.parse(stored); } catch (e) {}
-    }
+    const currentUser = await getCurrentUser();
     if (!currentUser) {
       showMessage('Please sign in to save prompts', 'error');
       return;
@@ -744,9 +762,36 @@ document.addEventListener("DOMContentLoaded", () => {
         throw new Error(t || 'Failed to save prompt');
       }
       showMessage('Prompt saved to your account! You can access it later.', 'success');
+      loadSavedPrompts();
     } catch (e) {
       showMessage(e.message || 'Failed to save prompt', 'error');
     }
+  }
+
+  function savePromptWrapper() { savePrompt(); }
+
+  function generatePrompt() {
+    const values = getValues();
+    
+    let template;
+    if (activeModule === "listing" && Modules[activeModule].templates) {
+      template = Modules[activeModule].templates[activeTemplate];
+    } else {
+      template = Modules[activeModule].template;
+    }
+    
+    const compiledPrompt = compile(template, values);
+    previewEl.textContent = compiledPrompt;
+    previewContainer.style.display = "block";
+    previewContainer.scrollIntoView({ behavior: "smooth" });
+    
+    // Track prompt generation - temporarily disabled to prevent 502 errors
+    // trackUserActivity('prompt_generated', {
+    //   module: activeModule,
+    //   template: activeTemplate,
+    //   fields_filled: Object.keys(values).filter(key => values[key] && values[key].trim()).length,
+    //   total_fields: Object.keys(values).length
+    // });
   }
 
   // Global functions for saving addresses and neighborhoods
@@ -860,7 +905,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   generateBtn.addEventListener("click", generatePrompt);
   copyBtn.addEventListener("click", copyToClipboard);
-  savePromptBtn.addEventListener("click", () => { savePrompt(); });
+  savePromptBtn.addEventListener("click", savePromptWrapper);
   savePropertyBtn.addEventListener("click", saveCurrentProperty);
 
   // Initialize the form
@@ -871,4 +916,7 @@ document.addEventListener("DOMContentLoaded", () => {
   
   // Load saved properties on page load
   loadSavedProperties();
+  // Ensure and load prompts list on load
+  ensureSavedPromptsSection();
+  loadSavedPrompts();
 });
