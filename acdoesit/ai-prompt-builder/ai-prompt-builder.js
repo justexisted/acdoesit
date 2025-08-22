@@ -756,15 +756,6 @@ document.addEventListener("DOMContentLoaded", () => {
       section.id = 'saved-prompts';
       section.className = 'saved-properties';
       section.style.display = 'none';
-      section.innerHTML = `
-        <h3>📝 Saved Prompts</h3>
-        <div class="action-buttons" style="margin-top:0;">
-          <select id="prompt-select" class="btn" style="background:#fff;color:#374151;border:1px solid #d1d5db;">
-            <option value="">Select a saved prompt…</option>
-          </select>
-        </div>
-        <div id="prompt-preview" class="preview" style="display:none;"></div>
-      `;
       const propertiesSection = document.getElementById('saved-properties');
       if (propertiesSection && propertiesSection.parentNode) {
         propertiesSection.parentNode.insertBefore(section, propertiesSection.nextSibling);
