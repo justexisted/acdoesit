@@ -143,30 +143,9 @@ document.addEventListener('DOMContentLoaded', () => {
   const adminEmailInput = document.getElementById('adminEmail');
   const adminPasswordInput = document.getElementById('adminPassword');
   
-  // Handle email/password login
+  // Handle email/password login (disabled)
   function handleEmailPasswordLogin() {
-    const email = adminEmailInput.value.trim();
-    const password = adminPasswordInput.value.trim();
-    
-    if (!email || !password) {
-      showLoginError('Please enter both email and password');
-      return;
-    }
-    
-    // Check if this is the admin email
-    if (email === ADMIN_EMAIL) {
-      // For now, accept any password for the admin email
-      // In production, you'd verify against a secure password hash
-      localStorage.setItem('adminAuthToken', email);
-      localStorage.setItem('adminName', 'Admin User');
-      localStorage.setItem('adminPicture', '');
-      
-      isAuthenticated = true;
-      showDashboard();
-      hideLoginError();
-    } else {
-      showLoginError(`Access denied. Only ${ADMIN_EMAIL} can access admin dashboard.`);
-    }
+    showLoginError('Email/password admin login is disabled. Please use Google Sign-In.');
   }
   
   // Add event listeners for email/password form
