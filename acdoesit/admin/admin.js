@@ -1,3 +1,11 @@
+// Ensure Google Sign-In callback exists before the Google script initializes
+// This stub captures early responses and defers handling until DOM is ready
+if (typeof window !== 'undefined' && typeof window.handleAdminGoogleSignIn !== 'function') {
+  window.handleAdminGoogleSignIn = function(response) {
+    try { window._pendingAdminGoogleResponse = response; } catch (e) {}
+  };
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   // Only allow this specific email to access admin
   const ADMIN_EMAIL = 'justexisted@gmail.com';
@@ -63,6 +71,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Make the function globally accessible
   window.handleAdminGoogleSignIn = handleAdminGoogleSignIn;
+  // If Google fired the callback before DOM was ready, handle it now
+  if (window._pendingAdminGoogleResponse) {
+    try { handleAdminGoogleSignIn(window._pendingAdminGoogleResponse); } finally { try { delete window._pendingAdminGoogleResponse; } catch (e) { window._pendingAdminGoogleResponse = null; } }
+  }
 
   // Decode JWT token from Google
   function decodeJwtResponse(token) {
