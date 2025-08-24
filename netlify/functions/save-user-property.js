@@ -22,7 +22,8 @@ export async function handler(event, context) {
     // Prepare property data for database
     const dbPropertyData = {
       user_id: userId,
-      property_name: propertyData.propertyName || propertyData.Property_Address || 'Unnamed Property',
+      property_name: propertyData.propertyName || propertyData.Property_Address || 'Unnamed Item',
+      // Allow empty address for non-listing modules
       address: propertyData.address || propertyData.Property_Address || '',
       neighborhood: propertyData.neighborhood || propertyData.Neighborhood || '',
       property_type: propertyData.propertyType || propertyData.Property_Type || '',

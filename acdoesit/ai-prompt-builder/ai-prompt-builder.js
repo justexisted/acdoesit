@@ -261,7 +261,7 @@ document.addEventListener("DOMContentLoaded", () => {
     return match2 ? match2.id : null;
   }
 
-  // Save current property to database
+  // Save current property to database (module-aware; address required only for listing)
   async function saveCurrentProperty() {
     try {
       const currentUser = await getCurrentUser();
@@ -271,13 +271,32 @@ document.addEventListener("DOMContentLoaded", () => {
       }
 
       const values = getValues();
-      if (!values.Property_Address && !values.Parcel_Address_or_APN) {
+      if (activeModule === 'listing' && !values.Property_Address) {
         showMessage('Please enter a property address first', 'error');
         return;
       }
 
+      // Derive a sensible name per module when address/APN is not present
+      const baseNameMap = {
+        listing: 'Property',
+        staging: 'Home Staging Template',
+        investment: 'Investment Analysis',
+        zoning: 'Zoning Research',
+        calendar: 'Content Calendar'
+      };
+      const base = baseNameMap[activeModule] || 'Saved Item';
+      const descriptor = (
+        values.Property_Address ||
+        values.Parcel_Address_or_APN ||
+        values.Neighborhood ||
+        values.Current_Zoning_Code ||
+        values.Property_Type ||
+        ''
+      );
+      const propertyName = descriptor ? `${base} — ${descriptor}` : `${base} — ${new Date().toLocaleString()}`;
+
       const propertyData = {
-        propertyName: values.Property_Address || values.Parcel_Address_or_APN || 'Unnamed Property',
+        propertyName,
         address: values.Property_Address || values.Parcel_Address_or_APN || '',
         neighborhood: values.Neighborhood || '',
         propertyType: values.Property_Type || '',
@@ -840,11 +859,8 @@ document.addEventListener("DOMContentLoaded", () => {
       showMessage('Please sign in to save prompts', 'error');
       return;
     }
+    // Try to associate with a property if possible; allow saving without one
     const propertyId = await findOrCreateCurrentPropertyId();
-    if (!propertyId) {
-      showMessage('Please enter and save a property address first', 'error');
-      return;
-    }
     try {
       addSpinnerToButton(buttonEl || savePromptBtn);
       const resp = await fetch('/.netlify/functions/save-user-prompt', {
@@ -856,7 +872,7 @@ document.addEventListener("DOMContentLoaded", () => {
           template: activeTemplate,
           prompt: text,
           formData: getValues(),
-          propertyId
+          propertyId: propertyId || null
         })
       });
       if (!resp.ok) {
@@ -1088,6 +1104,7 @@ document.addEventListener("DOMContentLoaded", () => {
     renderForm();
     previewEl.textContent = "";
     previewContainer.style.display = "none";
+    updateSaveButtonLabel();
   });
   
   // Template selection for listing module
@@ -1116,11 +1133,25 @@ document.addEventListener("DOMContentLoaded", () => {
   savePromptBtn.addEventListener("click", savePromptWrapper);
   savePropertyBtn.addEventListener("click", saveCurrentProperty);
 
+  // Update save button label per module
+  function updateSaveButtonLabel() {
+    const map = {
+      listing: '💾 Save Property',
+      staging: '💾 Save Home Staging Template',
+      investment: '💾 Save Investment Analysis',
+      zoning: '💾 Save Zoning Research',
+      calendar: '💾 Save Content Calendar'
+    };
+    const label = map[activeModule] || '💾 Save Item';
+    if (savePropertyBtn) savePropertyBtn.textContent = label;
+  }
+
   // Initialize the form
   renderForm();
   
   // Show template selector for listing module (default)
   templateSelector.style.display = "block";
+  updateSaveButtonLabel();
   
   // Load saved properties and prompts on page load
   loadSavedProperties();
