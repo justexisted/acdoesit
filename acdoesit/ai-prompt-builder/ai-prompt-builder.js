@@ -521,25 +521,23 @@ document.addEventListener("DOMContentLoaded", () => {
     fields.forEach(field => {
       const id = `f_${field.key}`;
       const element = document.getElementById(id);
-      
-      if (element && dataSource[field.key]) {
-        if (field.type === "checkboxes") {
-          const values = dataSource[field.key];
-          if (Array.isArray(values)) {
-            // Handle array of values
-            document.querySelectorAll(`input[name="${id}"]`).forEach(checkbox => {
-              checkbox.checked = values.includes(checkbox.value);
-            });
-          } else if (typeof values === 'string') {
-            // Handle comma-separated string
-            const valueArray = values.split(', ');
-            document.querySelectorAll(`input[name="${id}"]`).forEach(checkbox => {
-              checkbox.checked = valueArray.includes(checkbox.value);
-            });
-          }
-        } else {
-          element.value = dataSource[field.key];
+
+      if (field.type === "checkboxes") {
+        const raw = dataSource[field.key];
+        // Normalize to array of trimmed strings
+        const valueArray = Array.isArray(raw)
+          ? raw.map(v => String(v).trim())
+          : typeof raw === 'string'
+            ? raw.split(',').map(v => v.trim()).filter(Boolean)
+            : [];
+        const inputs = document.querySelectorAll(`input[name="${id}"]`);
+        if (inputs && inputs.length) {
+          inputs.forEach(checkbox => {
+            checkbox.checked = valueArray.includes(checkbox.value);
+          });
         }
+      } else if (element && dataSource[field.key] !== undefined) {
+        element.value = dataSource[field.key];
       }
     });
   }
@@ -569,7 +567,12 @@ document.addEventListener("DOMContentLoaded", () => {
       const dataKey = `${activeModule}_${field.key}`;
       
       if (field.type === "checkboxes") {
-        const savedValues = formData[dataKey] || [];
+        const raw = formData[dataKey];
+        const savedValues = Array.isArray(raw)
+          ? raw.map(v => String(v).trim())
+          : typeof raw === 'string'
+            ? raw.split(',').map(v => v.trim()).filter(Boolean)
+            : [];
         document.querySelectorAll(`input[name="${id}"]`).forEach(checkbox => {
           checkbox.checked = savedValues.includes(checkbox.value);
         });
