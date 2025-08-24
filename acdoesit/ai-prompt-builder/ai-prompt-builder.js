@@ -345,32 +345,71 @@ document.addEventListener("DOMContentLoaded", () => {
     section.style.display = 'block';
     list.innerHTML = '';
 
+    const inferModuleFromData = (data) => {
+      const d = data || {};
+      if (d.Current_Zoning_Code || d.Parcel_Address_or_APN || d.Proposed_Use || d.Lot_Size_Acres) return 'zoning';
+      if (d.Purchase_Price || d.Down_Payment_Percentage || d.Gross_Monthly_Rent || d.Estimated_Monthly_Expenses) return 'investment';
+      if (d.Property_Condition || d.Target_Buyer_Profile || d.Rooms_To_Stage) return 'staging';
+      if (d.Month || d.Target_Neighborhoods) return 'calendar';
+      return 'listing';
+    };
+
+    const getModuleIcon = (mod) => ({
+      listing: '📝',
+      investment: '💰',
+      zoning: '🏗️',
+      staging: '🎨',
+      calendar: '📅'
+    })[mod] || '📄';
+
+    const buildTitle = (property, mod) => {
+      const d = property.formData || {};
+      if (mod === 'listing') return (property.address || d.Property_Address || '').trim() || 'Property';
+      if (mod === 'investment') return (property.address || d.Property_Address || '').trim() || 'Investment Analysis';
+      if (mod === 'zoning') return (d.Parcel_Address_or_APN || property.address || '').trim() || 'Zoning Research';
+      if (mod === 'staging') {
+        const parts = [d.Neighborhood, d.Target_Buyer_Profile].filter(Boolean);
+        return (parts.join(' — ')).trim() || 'Home Staging Template';
+      }
+      if (mod === 'calendar') {
+        const parts = [d.Target_Neighborhoods, d.Month].filter(Boolean);
+        return (parts.join(' — ')).trim() || 'Content Calendar';
+      }
+      return property.propertyName || 'Saved Item';
+    };
+
     savedProperties.forEach((property, index) => {
       const propertyEl = document.createElement('div');
       propertyEl.className = 'property-item';
       
       // Use the new field names from the database
-      const address = property.address || property.Property_Address || property.Parcel_Address_or_APN || 'No Address';
-      const neighborhood = property.neighborhood || property.Neighborhood || 'No Neighborhood';
-      const propertyType = property.propertyType || property.Property_Type || 'Unknown Type';
+      const address = property.address || property.Property_Address || property.Parcel_Address_or_APN || '';
+      const neighborhood = property.neighborhood || property.Neighborhood || '';
+      const propertyType = property.propertyType || property.Property_Type || '';
       const savedDate = property.createdAt || property.created_at || property.savedAt || new Date();
       
       console.log('Displaying property:', property);
       console.log('Address:', address, 'Neighborhood:', neighborhood, 'Type:', propertyType, 'Date:', savedDate);
       
+      const moduleKey = property.module || inferModuleFromData(property.formData || property);
+      const icon = getModuleIcon(moduleKey);
+      const title = buildTitle(property, moduleKey);
+      const subtitle = (moduleKey === 'listing' || moduleKey === 'investment' || moduleKey === 'zoning') ? address : neighborhood;
+
       const prompts = promptsByProperty[property.id] || [];
       const promptOptions = prompts.map(p => `<option value="${p.id}">${(p.module || 'listing')} ${p.template || ''} — ${new Date(p.created_at).toLocaleString()}</option>`).join('');
 
       propertyEl.innerHTML = `
         <div class="property-header">
           <div>
-            <div class="property-name">${propertyType}</div>
-            <div class="property-address">${address}</div>
+            <div class="property-name">${title}</div>
+            <div class="property-address">${(subtitle || '').trim()}</div>
           </div>
+          <div class="property-icon" title="${moduleKey}" aria-label="${moduleKey}" style="font-size:20px;">${icon}</div>
         </div>
         <div class="property-details">
-          <strong>Neighborhood:</strong> ${neighborhood}<br>
-          <strong>Module:</strong> ${property.module || 'Unknown'}<br>
+          ${neighborhood ? `<strong>Neighborhood:</strong> ${neighborhood}<br>` : ''}
+          <strong>Type:</strong> ${moduleKey} ${icon}<br>
           <strong>Saved:</strong> ${new Date(savedDate).toLocaleDateString()}
         </div>
         <div class="property-actions" style="align-items:center; gap:8px; display:flex; justify-content:center; flex-wrap:wrap;">
@@ -403,8 +442,17 @@ document.addEventListener("DOMContentLoaded", () => {
       const property = savedProperties[index];
       
       // Switch to the correct module if needed
-      if (property.module && property.module !== activeModule) {
-        const moduleBtn = document.querySelector(`[data-module="${property.module}"]`);
+      const inferModuleFromData = (data) => {
+        const d = data || {};
+        if (d.Current_Zoning_Code || d.Parcel_Address_or_APN || d.Proposed_Use || d.Lot_Size_Acres) return 'zoning';
+        if (d.Purchase_Price || d.Down_Payment_Percentage || d.Gross_Monthly_Rent || d.Estimated_Monthly_Expenses) return 'investment';
+        if (d.Property_Condition || d.Target_Buyer_Profile || d.Rooms_To_Stage) return 'staging';
+        if (d.Month || d.Target_Neighborhoods) return 'calendar';
+        return 'listing';
+      };
+      const targetModule = property.module || inferModuleFromData(property.formData || property);
+      if (targetModule && targetModule !== activeModule) {
+        const moduleBtn = document.querySelector(`[data-module="${targetModule}"]`);
         if (moduleBtn) {
           moduleBtn.click();
         }
