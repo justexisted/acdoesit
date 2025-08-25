@@ -750,7 +750,14 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function renderForm() {
-    const { fields } = Modules[activeModule];
+    // Base fields for the active module
+    const allFields = Modules[activeModule].fields;
+
+    // Conditionally include Open House fields only when the open_house_flyer template is active
+    const fields = (activeModule === 'listing' && activeTemplate !== 'open_house_flyer')
+      ? allFields.filter(f => !String(f.key || '').startsWith('Open_House') && f.key !== 'Hosting_Agent_Name' && f.key !== 'Contact_Info' && f.key !== 'Parking_Details')
+      : allFields;
+
     formEl.innerHTML = fields.map(field => {
       const id = `f_${field.key}`;
       
@@ -1181,6 +1188,11 @@ document.addEventListener("DOMContentLoaded", () => {
     templateBtn.classList.add("active");
     
     activeTemplate = templateKey;
+    // Re-render the form so flyer-only fields show/hide appropriately
+    renderForm();
+    // Clear previous preview when switching templates
+    previewEl.textContent = "";
+    previewContainer.style.display = "none";
     
     // Track template selection - temporarily disabled to prevent 502 errors
     // trackUserActivity('template_selected', {
