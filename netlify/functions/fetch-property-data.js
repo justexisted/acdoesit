@@ -30,13 +30,19 @@ async function handler(event) {
       cityish
     ].filter(Boolean).join(', ') || g.display_name || address;
     const postcode = addr.postcode || '';
+    const fullAddress = [
+      [houseNumber, road].filter(Boolean).join(' '),
+      cityish,
+      state,
+      postcode
+    ].filter(Boolean).join(', ');
 
     // 2) Try to discover a Redfin URL for this address (best-effort)
     let redfin_url = '';
     let listing_url = '';
     let listing_source = '';
     try {
-      const rfQuery = encodeURIComponent([houseNumber, road, cityish, postcode].filter(Boolean).join(' '));
+      const rfQuery = encodeURIComponent(fullAddress);
       const rfSearch = `https://www.redfin.com/stingray/do/location-autocomplete?location=${rfQuery}&v=2&market=socal&al=1&iss=false`;
       const rfResp = await fetch(rfSearch, { headers: { 'User-Agent': userAgent, 'Accept': 'application/json' } });
       if (rfResp.ok) {
@@ -61,7 +67,7 @@ async function handler(event) {
     // If no Redfin, try finding any listing via DuckDuckGo HTML (free)
     if (!redfin_url) {
       try {
-        const q = encodeURIComponent([houseNumber, road, cityish, postcode, 'site:redfin.com OR site:zillow.com OR site:realtor.com'].filter(Boolean).join(' '));
+        const q = encodeURIComponent('"' + fullAddress + '" site:redfin.com OR site:zillow.com OR site:realtor.com');
         const ddgUrl = `https://duckduckgo.com/html/?q=${q}`;
         const sResp = await fetch(ddgUrl, { headers: { 'User-Agent': userAgent, 'Accept': 'text/html' } });
         if (sResp.ok) {
@@ -77,6 +83,22 @@ async function handler(event) {
             listing_url = candidates[0];
             listing_source = (listing_url.match(/\b(redfin|zillow|realtor)\.com/i) || [,''])[1] || '';
           }
+        }
+      } catch { /* ignore */ }
+    }
+
+    // If still no listing_url, synthesize a Zillow slug as a best-effort guess
+    if (!redfin_url && !listing_url) {
+      try {
+        const slug = fullAddress
+          .replace(/,/g, '')
+          .replace(/\s+/g, '-')
+          .replace(/--+/g, '-')
+          .replace(/[^A-Za-z0-9\-]/g, '')
+          .trim();
+        if (slug) {
+          listing_url = `https://www.zillow.com/homes/${slug}_rb/`;
+          listing_source = 'zillow_guess';
         }
       } catch { /* ignore */ }
     }
