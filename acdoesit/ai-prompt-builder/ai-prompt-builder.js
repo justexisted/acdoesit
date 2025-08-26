@@ -900,6 +900,85 @@ document.addEventListener("DOMContentLoaded", () => {
     return result;
   }
 
+  // Free Smart Address bar using OpenStreetMap Nominatim + Overpass
+  function ensureGlobalAddressBar() {
+    if (document.getElementById('global-address-bar')) return;
+    const bar = document.createElement('div');
+    bar.id = 'global-address-bar';
+    bar.style.cssText = 'display:flex;gap:8px;align-items:center;margin-bottom:12px;flex-wrap:wrap;';
+    bar.innerHTML = `
+      <input id="global-address-input" type="text" placeholder="Enter property address (e.g., 123 Example St, San Diego, CA)" style="flex:1;min-width:260px;">
+      <button id="global-address-fetch" class="btn">🔎 Fetch Details</button>
+    `;
+    const container = document.querySelector('.ai-prompt-builder') || document.body;
+    container.insertBefore(bar, container.firstChild);
+    const btn = document.getElementById('global-address-fetch');
+    if (btn) btn.addEventListener('click', fetchPropertyIntel);
+  }
+
+  async function fetchPropertyIntel(e) {
+    const btn = e?.target || document.getElementById('global-address-fetch');
+    const input = document.getElementById('global-address-input');
+    const address = (input?.value || '').trim();
+    if (!address) { showMessage('Enter an address first', 'error'); return; }
+    try {
+      addSpinnerToButton(btn);
+      const resp = await fetch('/.netlify/functions/fetch-property-data', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ address })
+      });
+      if (!resp.ok) { const t = await resp.text(); throw new Error(t || 'Failed to fetch property data'); }
+      const data = await resp.json();
+      populateFieldsFromIntel(address, data);
+      showMessage('Property details loaded', 'success');
+    } catch (err) {
+      showMessage(err.message || 'Failed to fetch details', 'error');
+    } finally {
+      removeSpinnerFromButton(btn);
+    }
+  }
+
+  function populateFieldsFromIntel(address, data) {
+    const setField = (module, key, value) => {
+      if (value === undefined || value === null || value === '') return;
+      formData[`${module}_${key}`] = String(value);
+      if (activeModule === module) {
+        const el = document.getElementById(`f_${key}`);
+        if (el) el.value = String(value);
+      }
+    };
+
+    const formatted = data.formatted_address || address;
+    const neighborhood = data.neighborhood || '';
+    const beds = data.beds ?? '';
+    const baths = data.baths ?? '';
+    const sqft = data.square_feet ?? '';
+    const propertyType = data.property_type || '';
+    const amenities = Array.isArray(data.amenities) ? data.amenities : [];
+    const features = Array.isArray(data.features) ? data.features : [];
+    const targetAudience = data.suggested_target_audience || '';
+
+    // Listing module
+    setField('listing', 'Property_Address', formatted);
+    setField('listing', 'Neighborhood', neighborhood);
+    setField('listing', 'Property_Type', propertyType);
+    setField('listing', 'Beds', beds);
+    setField('listing', 'Baths', baths);
+    setField('listing', 'Square_Footage', sqft);
+    if (features.length) setField('listing', 'Key_Features', features.map(f => `• ${f}`).join('\n'));
+    if (amenities.length) setField('listing', 'Nearby_Amenities', amenities.join(', '));
+    if (targetAudience) setField('listing', 'Target_Audience', targetAudience);
+
+    // Staging module
+    setField('staging', 'Neighborhood', neighborhood);
+
+    // Calendar module (Target_Neighborhoods is checkboxes; we store comma-separated string)
+    if (neighborhood) setField('calendar', 'Target_Neighborhoods', neighborhood);
+
+    // Re-render current form with updated data
+    renderForm();
+  }
   async function copyToClipboard() {
     const text = previewEl.textContent;
     if (!text) {
@@ -1278,6 +1357,9 @@ document.addEventListener("DOMContentLoaded", () => {
   // Initialize the form
   renderForm();
   
+  // Smart Address bar (free OSM-based)
+  ensureGlobalAddressBar();
+
   // Show template selector for listing module (default)
   templateSelector.style.display = "block";
   updateSaveButtonLabel();
