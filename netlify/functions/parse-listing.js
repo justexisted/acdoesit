@@ -1,6 +1,6 @@
 // Free parser for typical listing pages (Zillow/Redfin/Realtor/IDX)
 // Extracts beds, baths, square_feet, and property_type via JSON-LD/OpenGraph or regex fallbacks
-export async function handler(event) {
+async function handler(event) {
   try {
     const { url } = JSON.parse(event.body || '{}');
     if (!url) return respond(400, { error: 'URL required' });
@@ -76,5 +76,7 @@ function respond(statusCode, body) {
     body: JSON.stringify(body)
   };
 }
+
+module.exports = { handler };
 
 

@@ -1,4 +1,4 @@
-export async function handler(event) {
+async function handler(event) {
   try {
     const { address } = JSON.parse(event.body || '{}');
     if (!address) return respond(400, { error: 'Address required' });
@@ -118,3 +118,5 @@ function respond(statusCode, body) {
     body: JSON.stringify(body)
   };
 }
+
+module.exports = { handler };
