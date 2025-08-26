@@ -259,16 +259,49 @@ document.addEventListener("DOMContentLoaded", () => {
     const currentUser = await getCurrentUser();
     if (!currentUser) return null;
     const values = getValues();
-    const address = values.Property_Address || values.Parcel_Address_or_APN || '';
-    if (!address) return null;
-    // Try to find existing property by address for this user
-    const match = savedProperties.find(p => (p.address || '').trim().toLowerCase() === address.trim().toLowerCase());
-    if (match) return match.id;
-    // Create property then reload and find
+    const addressOrApn = (values.Property_Address || values.Parcel_Address_or_APN || '').trim();
+
+    // Prefer address/APN if present (existing behavior)
+    if (addressOrApn) {
+      const match = savedProperties.find(p => String((p.address || '')).trim().toLowerCase() === addressOrApn.toLowerCase());
+      if (match) return match.id;
+      await saveCurrentProperty();
+      await loadSavedProperties();
+      const match2 = savedProperties.find(p => String((p.address || '')).trim().toLowerCase() === addressOrApn.toLowerCase());
+      return match2 ? match2.id : null;
+    }
+
+    // No address/APN → try module-specific matching/creation
+    const getField = (p, k) => (p.formData && p.formData[k]) || p[k] || '';
+    const sameModule = p => (p.module || '') === activeModule;
+
+    let keys = [];
+    if (activeModule === 'staging') keys = ['Neighborhood', 'Target_Buyer_Profile', 'Budget_Level'];
+    else if (activeModule === 'calendar') keys = ['Month', 'Social_Media_Platform', 'Target_Neighborhoods'];
+    else if (activeModule === 'investment') keys = ['Property_Address'];
+    else if (activeModule === 'zoning') keys = ['Parcel_Address_or_APN'];
+
+    const compare = (p) => keys.every(k => {
+      const a = String(getField(p, k) || '').trim();
+      const b = String(values[k] || '').trim();
+      return b ? a.toLowerCase() === b.toLowerCase() : true;
+    });
+
+    const existing = savedProperties.find(p => sameModule(p) && compare(p));
+    if (existing) return existing.id;
+
+    // Create a property for this module/values
     await saveCurrentProperty();
     await loadSavedProperties();
-    const match2 = savedProperties.find(p => (p.address || '').trim().toLowerCase() === address.trim().toLowerCase());
-    return match2 ? match2.id : null;
+
+    // Try to find by exact formData match first
+    const exact = savedProperties.find(p => sameModule(p) && JSON.stringify(p.formData || {}) === JSON.stringify(values || {}));
+    if (exact) return exact.id;
+
+    // Fallback: most recent property in this module
+    const candidates = savedProperties.filter(p => sameModule(p));
+    candidates.sort((a, b) => new Date(b.createdAt || b.created_at || 0) - new Date(a.createdAt || a.created_at || 0));
+    return candidates.length ? candidates[0].id : null;
   }
 
   // Save current property to database (module-aware; address required only for listing)
@@ -388,6 +421,27 @@ document.addEventListener("DOMContentLoaded", () => {
       return property.propertyName || 'Saved Item';
     };
 
+    // Helper to match unassigned prompts to a property card by module and key fields
+    const getFieldValue = (obj, key) => {
+      const data = obj.formData || obj.form_data || obj;
+      return (data && data[key]) || '';
+    };
+    const getModuleMatchKeys = (mod) => {
+      if (mod === 'staging') return ['Neighborhood', 'Target_Buyer_Profile', 'Budget_Level'];
+      if (mod === 'calendar') return ['Month', 'Social_Media_Platform', 'Target_Neighborhoods'];
+      if (mod === 'investment') return ['Property_Address'];
+      if (mod === 'zoning') return ['Parcel_Address_or_APN'];
+      return ['Property_Address'];
+    };
+    const promptMatchesProperty = (prompt, property, mod) => {
+      const keys = getModuleMatchKeys(mod);
+      return keys.every(k => {
+        const a = String(getFieldValue(prompt, k) || '').trim().toLowerCase();
+        const b = String(getFieldValue(property, k) || '').trim().toLowerCase();
+        return b ? a === b : true;
+      });
+    };
+
     savedProperties.forEach((property, index) => {
       const propertyEl = document.createElement('div');
       propertyEl.className = 'property-item';
@@ -406,8 +460,10 @@ document.addEventListener("DOMContentLoaded", () => {
       const title = buildTitle(property, moduleKey);
       const subtitle = (moduleKey === 'listing' || moduleKey === 'investment' || moduleKey === 'zoning') ? address : neighborhood;
 
-      const prompts = promptsByProperty[property.id] || [];
-      const promptOptions = prompts.map(p => `<option value="${p.id}">${(p.module || 'listing')} ${p.template || ''} — ${new Date(p.created_at).toLocaleString()}</option>`).join('');
+      const assignedPrompts = promptsByProperty[property.id] || [];
+      const unassignedPrompts = (promptsByProperty[0] || []).filter(p => (p.module || '') === moduleKey && promptMatchesProperty(p, property, moduleKey));
+      const mergedPrompts = [...assignedPrompts, ...unassignedPrompts.filter(p => !assignedPrompts.some(a => String(a.id) === String(p.id)))];
+      const promptOptions = mergedPrompts.map(p => `<option value="${p.id}">${(p.module || 'listing')} ${p.template || ''} — ${new Date(p.created_at).toLocaleString()}</option>`).join('');
 
       propertyEl.innerHTML = `
         <div class="property-header">
