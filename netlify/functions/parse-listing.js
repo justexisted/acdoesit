@@ -36,6 +36,59 @@ async function handler(event) {
 
     const result = { beds: null, baths: null, square_feet: null, property_type: '' };
 
+    // Zillow-specific JSON extraction (__NEXT_DATA__ or preloaded data)
+    try {
+      if (/zillow\.com/i.test(url)) {
+        // __NEXT_DATA__ JSON
+        var nextDataMatch = html.match(/<script id=["']__NEXT_DATA__["'][^>]*>([\s\S]*?)<\/script>/i);
+        if (nextDataMatch && nextDataMatch[1]) {
+          try {
+            var nextJson = JSON.parse(nextDataMatch[1]);
+            var found = extractZillowFromJson(nextJson);
+            if (found) {
+              if (found.beds != null) result.beds = result.beds ?? found.beds;
+              if (found.baths != null) result.baths = result.baths ?? found.baths;
+              if (found.square_feet != null) result.square_feet = result.square_feet ?? found.square_feet;
+              if (found.property_type) result.property_type = result.property_type || found.property_type;
+            }
+          } catch (e) { /* ignore */ }
+        }
+        // hdpApolloPreloadedData style JSON (legacy)
+        if (result.beds == null || result.baths == null || result.square_feet == null) {
+          var apolloMatch = html.match(/<script[^>]*id=["']hdpApolloPreloadedData["'][^>]*>([\s\S]*?)<\/script>/i);
+          if (apolloMatch && apolloMatch[1]) {
+            try {
+              var apolloJson = JSON.parse(apolloMatch[1]);
+              var found2 = extractZillowFromJson(apolloJson);
+              if (found2) {
+                if (found2.beds != null) result.beds = result.beds ?? found2.beds;
+                if (found2.baths != null) result.baths = result.baths ?? found2.baths;
+                if (found2.square_feet != null) result.square_feet = result.square_feet ?? found2.square_feet;
+                if (found2.property_type) result.property_type = result.property_type || found2.property_type;
+              }
+            } catch (e) { /* ignore */ }
+          }
+        }
+        // Plain JSON patterns in HTML
+        if (result.beds == null) {
+          var mBeds = html.match(/"bedrooms"\s*:\s*(\d+(?:\.\d+)?)/i);
+          if (mBeds) result.beds = Number(mBeds[1]);
+        }
+        if (result.baths == null) {
+          var mBaths = html.match(/"bathrooms"\s*:\s*(\d+(?:\.\d+)?)/i);
+          if (mBaths) result.baths = Number(mBaths[1]);
+        }
+        if (result.square_feet == null) {
+          var mSq = html.match(/"livingArea"\s*:\s*(\d{3,5})/i) || html.match(/"livingAreaValue"\s*:\s*(\d{3,5})/i);
+          if (mSq) result.square_feet = Number(mSq[1]);
+        }
+        if (!result.property_type) {
+          var mType = html.match(/"homeType"\s*:\s*"([^"]+)"/i);
+          if (mType) result.property_type = mType[1];
+        }
+      }
+    } catch (e) { /* ignore */ }
+
     // Try JSON-LD first (avoid matchAll/optional chaining for older runtimes)
     try {
       var ldRegex = /<script[^>]*type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi;
@@ -120,5 +173,33 @@ function respond(statusCode, body) {
 }
 
 module.exports = { handler };
+
+// Helper: traverse Zillow JSON and pick fields
+function extractZillowFromJson(obj) {
+  try {
+    var out = { beds: null, baths: null, square_feet: null, property_type: '' };
+    var found = false;
+    function visit(o) {
+      if (!o || typeof o !== 'object' || found) return;
+      // Common keys
+      if (typeof o.bedrooms !== 'undefined' || typeof o.bathrooms !== 'undefined' || typeof o.livingArea !== 'undefined' || typeof o.homeType !== 'undefined') {
+        if (o.bedrooms != null && out.beds == null && !isNaN(Number(o.bedrooms))) out.beds = Number(o.bedrooms);
+        if (o.bathrooms != null && out.baths == null && !isNaN(Number(o.bathrooms))) out.baths = Number(o.bathrooms);
+        if (o.livingArea != null && out.square_feet == null && !isNaN(Number(o.livingArea))) out.square_feet = Number(o.livingArea);
+        if (o.homeType && !out.property_type) out.property_type = String(o.homeType);
+        if (out.beds != null && out.baths != null && out.square_feet != null) found = true;
+      }
+      // Zillow caches often store in gdpClientCache
+      for (var k in o) {
+        if (!o.hasOwnProperty(k)) continue;
+        var v = o[k];
+        if (typeof v === 'object') visit(v);
+      }
+    }
+    visit(obj);
+    if (out.beds != null || out.baths != null || out.square_feet != null || out.property_type) return out;
+  } catch (e) { /* ignore */ }
+  return null;
+}
 
 
