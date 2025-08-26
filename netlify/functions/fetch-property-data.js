@@ -64,6 +64,35 @@ async function handler(event) {
       }
     } catch { /* ignore */ }
 
+    // If no Redfin yet, try DuckDuckGo restricted to Redfin (free)
+    if (!redfin_url) {
+      try {
+        const qRedfin = encodeURIComponent('"' + fullAddress + '" site:redfin.com');
+        const ddgUrlRedfin = `https://duckduckgo.com/html/?q=${qRedfin}`;
+        const sRespR = await fetch(ddgUrlRedfin, { headers: { 'User-Agent': userAgent, 'Accept': 'text/html' } });
+        if (sRespR.ok) {
+          const sHtmlR = await sRespR.text();
+          const candidatesR = [];
+          // Direct redfin links
+          let rxR1 = /href="(https?:\/\/(?:www\.)?redfin\.com[^"\s]+)"/ig;
+          let mR1;
+          while ((mR1 = rxR1.exec(sHtmlR)) !== null) { candidatesR.push(mR1[1]); }
+          // DDG redirect links with uddg param
+          let rxR2 = /href=\"\/l\/\?[^\"]*?uddg=([^\"&]+)[^\"]*\"/ig;
+          let mR2;
+          while ((mR2 = rxR2.exec(sHtmlR)) !== null) {
+            try {
+              const decoded = decodeURIComponent(mR2[1]);
+              if (/^https?:\/\/(?:www\.)?redfin\.com/i.test(decoded)) candidatesR.push(decoded);
+            } catch {}
+          }
+          // Prefer /home/ URLs
+          const pickR = candidatesR.find(u => /\/home\//i.test(u)) || candidatesR[0];
+          if (pickR) redfin_url = pickR;
+        }
+      } catch { /* ignore */ }
+    }
+
     // If no Redfin, try finding any listing via DuckDuckGo HTML (free)
     if (!redfin_url) {
       try {
