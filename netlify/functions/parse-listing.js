@@ -5,9 +5,34 @@ async function handler(event) {
     const { url } = JSON.parse(event.body || '{}');
     if (!url) return respond(400, { error: 'URL required' });
 
-    const pageResp = await fetch(url, { headers: { 'User-Agent': 'Mozilla/5.0' } });
-    if (!pageResp.ok) return respond(502, { error: 'Failed to fetch page' });
-    const html = await pageResp.text();
+    async function fetchWithUA(target) {
+      const controller = new AbortController();
+      const t = setTimeout(() => controller.abort(), 12000);
+      try {
+        const resp = await fetch(target, {
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123 Safari/537.36',
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+            'Accept-Language': 'en-US,en;q=0.9'
+          },
+          redirect: 'follow',
+          signal: controller.signal
+        });
+        if (!resp.ok) return null;
+        return await resp.text();
+      } catch (e) {
+        return null;
+      } finally { clearTimeout(t); }
+    }
+
+    let html = await fetchWithUA(url);
+    if (!html) {
+      // Fallback: r.jina.ai free reader proxy to bypass blocks
+      const normalized = url.replace(/^https?:\/\//, '');
+      const fallbackUrl = 'https://r.jina.ai/http://' + normalized;
+      html = await fetchWithUA(fallbackUrl);
+      if (!html) return respond(502, { error: 'Failed to fetch page' });
+    }
 
     const result = { beds: null, baths: null, square_feet: null, property_type: '' };
 
@@ -38,7 +63,7 @@ async function handler(event) {
       }
     } catch (e) { /* ignore */ }
 
-    // OpenGraph fallbacks
+    // OpenGraph fallbacks (from HTML)
     if (result.square_feet == null) {
       const og = html.match(/property=["']og:description["'][^>]*content=["']([^"']+)["']/i) || html.match(/name=["']description["'][^>]*content=["']([^"']+)["']/i);
       const text = (og && og[1]) ? og[1] : '';
@@ -50,18 +75,30 @@ async function handler(event) {
       if (btm) result.baths = Number(btm[1]);
     }
 
-    // Generic regex fallbacks from visible HTML
+    // Generic regex fallbacks from visible HTML or fallback text
     if (result.beds == null) {
       const m = html.match(/>(\d+(?:\.\d+)?)\s*Beds?<\/|\b(\d+(?:\.\d+)?)\s*Beds?\b/i);
       if (m) result.beds = Number(m[1] || m[2]);
+      else {
+        const m2 = html.match(/\b(\d+(?:\.\d+)?)\s*(?:bd|bedrooms?)\b/i);
+        if (m2) result.beds = Number(m2[1]);
+      }
     }
     if (result.baths == null) {
       const m = html.match(/>(\d+(?:\.\d+)?)\s*Baths?<\/|\b(\d+(?:\.\d+)?)\s*Baths?\b/i);
       if (m) result.baths = Number(m[1] || m[2]);
+      else {
+        const m2 = html.match(/\b(\d+(?:\.\d+)?)\s*(?:ba|baths?|bathrooms?)\b/i);
+        if (m2) result.baths = Number(m2[1]);
+      }
     }
     if (result.square_feet == null) {
       const m = html.match(/>(\d{3,4})\s*(sq\.?\s*ft|sf)<\/|\b(\d{3,4})\s*(sq\.?\s*ft|sf)\b/i);
       if (m) result.square_feet = Number(m[1] || m[3]);
+      else {
+        const m2 = html.match(/\b(\d{3,4}(?:,\d{3})?)\s*(?:sq\.?\s*ft|sf)\b/i);
+        if (m2) result.square_feet = Number(m2[1].replace(/,/g, ''));
+      }
     }
     if (!result.property_type) {
       const m = html.match(/property\s*type[^<:]*:?\s*<[^>]*>([^<]+)<\//i) || html.match(/\b(Condo|minihouse|Single[-\s]?Family|Townhouse|Multi[-\s]?Unit|Apartment|Duplex|Manufactured|Mobile)\b/i);
