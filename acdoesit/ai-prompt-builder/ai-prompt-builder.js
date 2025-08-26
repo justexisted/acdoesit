@@ -909,11 +909,15 @@ document.addEventListener("DOMContentLoaded", () => {
     bar.innerHTML = `
       <input id="global-address-input" type="text" placeholder="Enter property address (e.g., 123 Example St, San Diego, CA)" style="flex:1;min-width:260px;">
       <button id="global-address-fetch" class="btn">🔎 Fetch Details</button>
+      <input id="listing-url-input" type="url" placeholder="Paste listing URL (Zillow/Redfin/Realtor)" style="flex:1;min-width:260px;">
+      <button id="listing-url-parse" class="btn">🧩 Parse Listing</button>
     `;
     const container = document.querySelector('.ai-prompt-builder') || document.body;
     container.insertBefore(bar, container.firstChild);
     const btn = document.getElementById('global-address-fetch');
     if (btn) btn.addEventListener('click', fetchPropertyIntel);
+    const parseBtn = document.getElementById('listing-url-parse');
+    if (parseBtn) parseBtn.addEventListener('click', parseListingUrl);
   }
 
   async function fetchPropertyIntel(e) {
@@ -966,7 +970,13 @@ document.addEventListener("DOMContentLoaded", () => {
     setField('listing', 'Beds', beds);
     setField('listing', 'Baths', baths);
     setField('listing', 'Square_Footage', sqft);
-    if (features.length) setField('listing', 'Key_Features', features.map(f => `• ${f}`).join('\n'));
+    // Merge auto features with any existing content in Key_Features
+    if (features.length) {
+      const existing = formData['listing_Key_Features'] || '';
+      const auto = features.map(f => `• ${f}`).join('\n');
+      const merged = existing ? `${existing}\n${auto}` : auto;
+      setField('listing', 'Key_Features', merged);
+    }
     if (amenities.length) setField('listing', 'Nearby_Amenities', amenities.join(', '));
     if (targetAudience) setField('listing', 'Target_Audience', targetAudience);
 
@@ -978,6 +988,36 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Re-render current form with updated data
     renderForm();
+  }
+
+  async function parseListingUrl(e) {
+    const btn = e?.target || document.getElementById('listing-url-parse');
+    const input = document.getElementById('listing-url-input');
+    const url = (input?.value || '').trim();
+    if (!url) { showMessage('Paste a listing URL first', 'error'); return; }
+    try {
+      addSpinnerToButton(btn);
+      const resp = await fetch('/.netlify/functions/parse-listing', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url })
+      });
+      if (!resp.ok) { const t = await resp.text(); throw new Error(t || 'Failed to parse listing'); }
+      const data = await resp.json();
+      if (data) {
+        const setIf = (k, v) => { if (v !== undefined && v !== null && v !== '') { formData[`listing_${k}`] = String(v); if (activeModule === 'listing') { const el = document.getElementById(`f_${k}`); if (el) el.value = String(v); } } };
+        setIf('Beds', data.beds);
+        setIf('Baths', data.baths);
+        setIf('Square_Footage', data.square_feet);
+        if (data.property_type) setIf('Property_Type', data.property_type);
+        renderForm();
+        showMessage('Listing details parsed', 'success');
+      }
+    } catch (err) {
+      showMessage(err.message || 'Failed to parse listing', 'error');
+    } finally {
+      removeSpinnerFromButton(btn);
+    }
   }
   async function copyToClipboard() {
     const text = previewEl.textContent;

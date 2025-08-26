@@ -15,8 +15,21 @@ export async function handler(event) {
     const lat = parseFloat(g.lat);
     const lon = parseFloat(g.lon);
     const addr = g.address || {};
-    const neighborhood = addr.neighbourhood || addr.suburb || addr.city_district || addr.village || addr.town || '';
-    const formatted_address = g.display_name || address;
+    // Neighborhood preference order; avoid county/state/zip
+    const neighborhood = (
+      addr.neighbourhood || addr.suburb || addr.city_district || addr.quarter || addr.borough || addr.locality || addr.hamlet || addr.town || addr.city || ''
+    );
+    // Clean, short street address line
+    const houseNumber = addr.house_number || '';
+    const road = addr.road || addr.pedestrian || addr.footway || addr.cycleway || addr.path || '';
+    const cityish = addr.city || addr.town || addr.village || '';
+    const state = addr.state || '';
+    const formatted_address = [
+      [houseNumber, road].filter(Boolean).join(' '),
+      // Optionally append city if available; omit county, state, zip from the main input
+      cityish
+    ].filter(Boolean).join(', ') || g.display_name || address;
+    const postcode = addr.postcode || '';
 
     // 2) Nearby amenities via Overpass API (free) - small radius and limited results
     let amenities = [];
@@ -48,17 +61,49 @@ export async function handler(event) {
       // ignore amenity fetch errors
     }
 
+    // Heuristics: Near beach and near Balboa Park
+    const toRad = (x) => x * Math.PI / 180;
+    const haversineMeters = (aLat, aLon, bLat, bLon) => {
+      const R = 6371000;
+      const dLat = toRad(bLat - aLat);
+      const dLon = toRad(bLon - aLon);
+      const s1 = Math.sin(dLat/2) ** 2 + Math.cos(toRad(aLat)) * Math.cos(toRad(bLat)) * Math.sin(dLon/2) ** 2;
+      return 2 * R * Math.asin(Math.sqrt(s1));
+    };
+    // A few coastal reference points in San Diego County
+    const coastRefs = [
+      [32.8500, -117.2720], // La Jolla Cove
+      [32.7925, -117.2540], // Pacific Beach
+      [32.7490, -117.2510], // Ocean Beach
+      [32.7650, -117.2520], // Mission Beach
+      [32.6780, -117.1720], // Coronado
+      [32.9628, -117.2696], // Del Mar
+      [33.0450, -117.2920], // Encinitas
+      [33.1600, -117.3500], // Carlsbad
+      [33.1950, -117.3820]  // Oceanside
+    ];
+    const minCoastDist = Math.min(...coastRefs.map(([clat, clon]) => haversineMeters(lat, lon, clat, clon)));
+    const nearBeach = Number.isFinite(minCoastDist) && minCoastDist < 3000; // < 3km
+    // Balboa Park center approx
+    const balboaLat = 32.734382, balboaLon = -117.144123;
+    const balboaDist = haversineMeters(lat, lon, balboaLat, balboaLon);
+    const nearBalboa = Number.isFinite(balboaDist) && balboaDist < 5000; // < 5km
+    const features = [];
+    if (nearBeach) features.push('Near the beach');
+    if (nearBalboa) features.push('Near Balboa Park');
+
     // 3) Return data (no paid providers: beds/baths/sqft/property_type may be blank)
     return respond(200, {
       formatted_address,
       neighborhood,
       lat, lon,
+      postcode,
       beds: null,
       baths: null,
       square_feet: null,
       property_type: '',
       amenities,
-      features: [],
+      features,
       suggested_target_audience: ''
     });
   } catch (e) {
