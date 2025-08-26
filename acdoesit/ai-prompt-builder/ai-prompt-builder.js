@@ -937,14 +937,16 @@ document.addEventListener("DOMContentLoaded", () => {
       populateFieldsFromIntel(address, data);
       showMessage('Property details loaded', 'success');
       // If a Redfin URL is available, auto-fill the listing URL and trigger parse
-      if (data && data.redfin_url) {
+      if (data) {
         const urlInput = document.getElementById('listing-url-input');
         const parseBtn = document.getElementById('listing-url-parse');
-        if (urlInput) urlInput.value = data.redfin_url;
-        // Trigger parse immediately
-        if (parseBtn) parseBtn.click();
-      } else {
-        console.log('No redfin_url returned for address');
+        const urlToUse = data.redfin_url || data.listing_url || '';
+        if (urlInput && urlToUse) {
+          urlInput.value = urlToUse;
+          if (parseBtn) parseBtn.click();
+        } else {
+          console.log('No listing URL found for address');
+        }
       }
     } catch (err) {
       showMessage(err.message || 'Failed to fetch details', 'error');

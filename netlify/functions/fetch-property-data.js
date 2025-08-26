@@ -33,6 +33,8 @@ async function handler(event) {
 
     // 2) Try to discover a Redfin URL for this address (best-effort)
     let redfin_url = '';
+    let listing_url = '';
+    let listing_source = '';
     try {
       const rfQuery = encodeURIComponent([houseNumber, road, cityish, postcode].filter(Boolean).join(' '));
       const rfSearch = `https://www.redfin.com/stingray/do/location-autocomplete?location=${rfQuery}&v=2&market=socal&al=1&iss=false`;
@@ -55,6 +57,29 @@ async function handler(event) {
         if (pick) redfin_url = pick.startsWith('http') ? pick : `https://www.redfin.com${pick}`;
       }
     } catch { /* ignore */ }
+
+    // If no Redfin, try finding any listing via DuckDuckGo HTML (free)
+    if (!redfin_url) {
+      try {
+        const q = encodeURIComponent([houseNumber, road, cityish, postcode, 'site:redfin.com OR site:zillow.com OR site:realtor.com'].filter(Boolean).join(' '));
+        const ddgUrl = `https://duckduckgo.com/html/?q=${q}`;
+        const sResp = await fetch(ddgUrl, { headers: { 'User-Agent': userAgent, 'Accept': 'text/html' } });
+        if (sResp.ok) {
+          const sHtml = await sResp.text();
+          // Try to extract a clean link from allowed domains
+          const rx = /href="(https?:\/\/(?:www\.)?(redfin|zillow|realtor)\.com[^"\s]+)"/ig;
+          let m;
+          const candidates = [];
+          while ((m = rx.exec(sHtml)) !== null) {
+            candidates.push(m[1]);
+          }
+          if (candidates.length) {
+            listing_url = candidates[0];
+            listing_source = (listing_url.match(/\b(redfin|zillow|realtor)\.com/i) || [,''])[1] || '';
+          }
+        }
+      } catch { /* ignore */ }
+    }
 
     // 3) Nearby amenities via Overpass API (free) - small radius and limited results
     let amenities = [];
@@ -124,6 +149,8 @@ async function handler(event) {
       lat, lon,
       postcode,
       redfin_url,
+      listing_url,
+      listing_source,
       beds: null,
       baths: null,
       square_feet: null,
