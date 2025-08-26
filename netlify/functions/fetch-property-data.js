@@ -41,28 +41,43 @@ async function handler(event) {
     let redfin_url = '';
     let listing_url = '';
     let listing_source = '';
-    try {
-      const rfQuery = encodeURIComponent(fullAddress);
-      const rfSearch = `https://www.redfin.com/stingray/do/location-autocomplete?location=${rfQuery}&v=2&market=socal&al=1&iss=false`;
-      const rfResp = await fetch(rfSearch, { headers: { 'User-Agent': userAgent, 'Accept': 'application/json' } });
-      if (rfResp.ok) {
-        const rj = await rfResp.json();
-        const collectRows = (obj) => {
-          let rows = [];
-          if (!obj || typeof obj !== 'object') return rows;
-          if (Array.isArray(obj)) return obj.flatMap(collectRows);
-          if (obj.rows && Array.isArray(obj.rows)) rows = rows.concat(obj.rows);
-          if (obj.sections && Array.isArray(obj.sections)) rows = rows.concat(obj.sections.flatMap(collectRows));
-          if (obj.autocomplete_sections && Array.isArray(obj.autocomplete_sections)) rows = rows.concat(obj.autocomplete_sections.flatMap(collectRows));
-          if (obj.payload) rows = rows.concat(collectRows(obj.payload));
-          return rows;
-        };
-        const rows = collectRows(rj);
+    const collectRows = (obj) => {
+      let rows = [];
+      if (!obj || typeof obj !== 'object') return rows;
+      if (Array.isArray(obj)) return obj.flatMap(collectRows);
+      if (obj.rows && Array.isArray(obj.rows)) rows = rows.concat(obj.rows);
+      if (obj.sections && Array.isArray(obj.sections)) rows = rows.concat(obj.sections.flatMap(collectRows));
+      if (obj.autocomplete_sections && Array.isArray(obj.autocomplete_sections)) rows = rows.concat(obj.autocomplete_sections.flatMap(collectRows));
+      if (obj.payload) rows = rows.concat(collectRows(obj.payload));
+      return rows;
+    };
+    async function tryRF(loc, market) {
+      try {
+        const url = `https://www.redfin.com/stingray/do/location-autocomplete?location=${encodeURIComponent(loc)}&v=2${market ? `&market=${encodeURIComponent(market)}` : ''}&al=1&iss=false`;
+        const resp = await fetch(url, { headers: { 'User-Agent': userAgent, 'Accept': 'application/json', 'Referer': 'https://www.redfin.com/' } });
+        if (!resp.ok) return '';
+        const data = await resp.json();
+        const rows = collectRows(data);
         const candidates = rows.filter(r => r && r.url).map(r => String(r.url));
-        const pick = candidates.find(u => /\/home\//.test(u)) || candidates.find(u => /\/CA\//.test(u)) || candidates[0];
-        if (pick) redfin_url = pick.startsWith('http') ? pick : `https://www.redfin.com${pick}`;
+        const pick = candidates.find(u => /\/home\//i.test(u)) || candidates.find(u => /\/CA\//i.test(u)) || candidates[0];
+        if (pick) return pick.startsWith('http') ? pick : `https://www.redfin.com${pick}`;
+      } catch {}
+      return '';
+    }
+    // Try several variations
+    const rfVariants = [
+      fullAddress,
+      [houseNumber, road, cityish].filter(Boolean).join(' '),
+      [houseNumber, road, cityish, state].filter(Boolean).join(' '),
+      [houseNumber, road, postcode].filter(Boolean).join(' ')
+    ].filter(Boolean);
+    const rfMarkets = [null, 'socal', 'san-diego', 'los-angeles'];
+    for (let i = 0; i < rfVariants.length && !redfin_url; i++) {
+      for (let j = 0; j < rfMarkets.length && !redfin_url; j++) {
+        const got = await tryRF(rfVariants[i], rfMarkets[j]);
+        if (got) redfin_url = got;
       }
-    } catch { /* ignore */ }
+    }
 
     // If no Redfin yet, try DuckDuckGo restricted to Redfin (free)
     if (!redfin_url) {
