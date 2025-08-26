@@ -11,32 +11,37 @@ async function handler(event) {
 
     const result = { beds: null, baths: null, square_feet: null, property_type: '' };
 
-    // Try JSON-LD first
-    const ldMatches = Array.from(html.matchAll(/<script[^>]*type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi));
-    for (const m of ldMatches) {
-      try {
-        const json = JSON.parse(m[1]);
-        const items = Array.isArray(json) ? json : [json];
-        for (const item of items) {
-          const type = (item['@type'] || '').toString().toLowerCase();
-          if (type.includes('apartment') || type.includes('house') || type.includes('residence') || type.includes('singlefamily') || type.includes('product') || type.includes('offer')) {
-            const agg = item?.offers?.[0]?.itemOffered || item?.itemOffered || item;
-            result.property_type = result.property_type || (agg?.@type || item?.@type || '').toString();
-            const bd = agg?.numberOfRooms || agg?.numberOfBedrooms || item?.numberOfBedrooms;
-            const bt = agg?.numberOfBathroomsTotal || item?.numberOfBathroomsTotal || item?.numberOfBathrooms;
-            const sf = agg?.floorSize?.value || agg?.floorSize?.value?.value || item?.floorSize?.value || item?.floorSize;
-            if (bd != null) result.beds = Number(bd) || result.beds;
-            if (bt != null) result.baths = Number(bt) || result.baths;
-            if (sf != null) result.square_feet = Number(sf) || result.square_feet;
+    // Try JSON-LD first (avoid matchAll/optional chaining for older runtimes)
+    try {
+      var ldRegex = /<script[^>]*type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi;
+      var m;
+      while ((m = ldRegex.exec(html)) !== null) {
+        try {
+          var json = JSON.parse(m[1]);
+          var items = Array.isArray(json) ? json : [json];
+          for (var i = 0; i < items.length; i++) {
+            var item = items[i] || {};
+            var type = (item['@type'] || '').toString().toLowerCase();
+            if (type.indexOf('apartment') >= 0 || type.indexOf('house') >= 0 || type.indexOf('residence') >= 0 || type.indexOf('singlefamily') >= 0 || type.indexOf('product') >= 0 || type.indexOf('offer') >= 0) {
+              var agg = (item.offers && item.offers[0] && item.offers[0].itemOffered) || item.itemOffered || item;
+              var aggType = (agg && agg['@type']) || item['@type'] || '';
+              result.property_type = result.property_type || aggType.toString();
+              var bd = (agg && (agg.numberOfRooms || agg.numberOfBedrooms)) || item.numberOfBedrooms;
+              var bt = (agg && (agg.numberOfBathroomsTotal)) || item.numberOfBathroomsTotal || item.numberOfBathrooms;
+              var sf = (agg && agg.floorSize && (agg.floorSize.value || (agg.floorSize.value && agg.floorSize.value.value))) || (item.floorSize && item.floorSize.value) || item.floorSize;
+              if (bd != null && !isNaN(Number(bd))) result.beds = Number(bd);
+              if (bt != null && !isNaN(Number(bt))) result.baths = Number(bt);
+              if (sf != null && !isNaN(Number(sf))) result.square_feet = Number(sf);
+            }
           }
-        }
-      } catch { /* ignore */ }
-    }
+        } catch (e) { /* ignore */ }
+      }
+    } catch (e) { /* ignore */ }
 
     // OpenGraph fallbacks
     if (result.square_feet == null) {
       const og = html.match(/property=["']og:description["'][^>]*content=["']([^"']+)["']/i) || html.match(/name=["']description["'][^>]*content=["']([^"']+)["']/i);
-      const text = og?.[1] || '';
+      const text = (og && og[1]) ? og[1] : '';
       const sfm = text.match(/(\d{3,4})\s*(sq\.?\s*ft|sf)/i);
       if (sfm) result.square_feet = Number(sfm[1]);
       const bdm = text.match(/(\d+(?:\.\d+)?)\s*bed/i);
