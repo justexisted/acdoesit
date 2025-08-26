@@ -940,12 +940,13 @@ document.addEventListener("DOMContentLoaded", () => {
       if (data) {
         const urlInput = document.getElementById('listing-url-input');
         const parseBtn = document.getElementById('listing-url-parse');
-        const urlToUse = data.redfin_url || data.listing_url || '';
+        const urlToUse = data.redfin_url || '';
         if (urlInput && urlToUse) {
           urlInput.value = urlToUse;
           if (parseBtn) parseBtn.click();
         } else {
-          console.log('No listing URL found for address');
+          console.log('No Redfin URL found for address');
+          showMessage('No Redfin listing found. Paste a listing URL to parse.', 'info');
         }
       }
     } catch (err) {

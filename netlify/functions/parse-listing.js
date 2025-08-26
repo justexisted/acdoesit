@@ -89,6 +89,24 @@ async function handler(event) {
       }
     } catch (e) { /* ignore */ }
 
+    // Zillow HTML chips fallback (extract from visible chips with data-testid labels)
+    try {
+      if ((result.beds == null || result.baths == null || result.square_feet == null) && /zillow\.com/i.test(url)) {
+        var chips = /data-testid=["']bed-bath-sqft-fact-container["'][\s\S]*?<span[^>]*>([\d,\.]+)<\/span>[\s\S]*?<span[^>]*>(beds?|baths?|sq\s*ft)\b/gi;
+        var mm;
+        while ((mm = chips.exec(html)) !== null) {
+          var valStr = (mm[1] || '').replace(/,/g, '');
+          var num = Number(valStr);
+          var label = (mm[2] || '').toLowerCase();
+          if (!isNaN(num)) {
+            if ((label.indexOf('bed') >= 0) && result.beds == null) result.beds = num;
+            else if ((label.indexOf('bath') >= 0) && result.baths == null) result.baths = num;
+            else if ((label.indexOf('sq') >= 0) && result.square_feet == null) result.square_feet = num;
+          }
+        }
+      }
+    } catch (e) { /* ignore */ }
+
     // Try JSON-LD first (avoid matchAll/optional chaining for older runtimes)
     try {
       var ldRegex = /<script[^>]*type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi;
