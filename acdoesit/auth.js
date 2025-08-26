@@ -15,6 +15,8 @@ class AuthSystem {
       this.setupEventListeners();
       this.setupGoogleAuth();
     }
+    // If referral code present, prefetch reward and show sign-up banner text
+    this.handleReferralFromUrl();
   }
 
   setupEventListeners() {
@@ -139,8 +141,11 @@ class AuthSystem {
         return;
       }
 
+      // Include referral code if present
+      const referralCode = this.getReferralCode();
+
       // Create new user
-      const user = await this.createUser({ firstName, lastName, email, password });
+      const user = await this.createUser({ firstName, lastName, email, password, referralCode });
       
       // Sign in the user
       await this.signIn(user);
@@ -294,7 +299,7 @@ class AuthSystem {
       const response = await fetch('/.netlify/functions/save-user', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userData: user })
+        body: JSON.stringify({ userData: user, referralCode: userData.referralCode || null })
       });
 
       if (!response.ok) {
@@ -309,6 +314,42 @@ class AuthSystem {
       console.error('Error creating user:', error);
       throw new Error('Failed to create account');
     }
+  }
+
+  getReferralCode() {
+    try {
+      const params = new URLSearchParams(window.location.search || '');
+      const code = params.get('ref');
+      return code ? code.trim() : null;
+    } catch { return null; }
+  }
+
+  async handleReferralFromUrl() {
+    const code = this.getReferralCode();
+    if (!code) return;
+    try {
+      const resp = await fetch(`/.netlify/functions/get-referral-by-code?code=${encodeURIComponent(code)}`);
+      if (!resp.ok) return;
+      const data = await resp.json();
+      const reward = data && data.referral && data.referral.referee_reward_description;
+      if (reward) {
+        // If sign up modal exists, surface reward copy
+        const header = document.querySelector('#signUpModal .auth-modal-header h2');
+        if (header) {
+          header.textContent = 'Sign Up — Referral Reward';
+        }
+        const body = document.querySelector('#signUpModal .auth-modal-body');
+        if (body) {
+          const note = document.createElement('div');
+          note.className = 'referral-reward-note';
+          note.style.cssText = 'margin-bottom:10px;padding:10px;border:1px dashed #d1d5db;border-radius:8px;background:#fafafa;';
+          note.textContent = `Welcome! Your friend has invited you to get: ${reward}`;
+          body.prepend(note);
+        }
+        // Auto-open signup modal for convenience
+        try { openSignUpModal(); } catch {}
+      }
+    } catch {}
   }
 
   async verifyCredentials(email, password) {
@@ -668,6 +709,7 @@ class AuthSystem {
     const userStatus = document.getElementById('user-status');
     const userFirstName = document.getElementById('user-first-name');
     const aiPromptBuilderSection = document.getElementById('ai-prompt-builder-section');
+    const referralsSection = document.getElementById('referrals-section');
 
     console.log('Found elements:', { authButtons: !!authButtons, userStatus: !!userStatus, userFirstName: !!userFirstName, aiPromptBuilderSection: !!aiPromptBuilderSection });
 
@@ -677,11 +719,13 @@ class AuthSystem {
       if (userStatus) userStatus.style.display = 'flex';
       if (userFirstName) userFirstName.textContent = this.currentUser.firstName;
       if (aiPromptBuilderSection) aiPromptBuilderSection.style.display = 'block';
+      if (referralsSection) referralsSection.style.display = 'block';
     } else {
       console.log('User is not authenticated, hiding AI Prompt Builder button');
       if (authButtons) authButtons.style.display = 'flex';
       if (userStatus) userStatus.style.display = 'none';
       if (aiPromptBuilderSection) aiPromptBuilderSection.style.display = 'none';
+      if (referralsSection) referralsSection.style.display = 'none';
     }
   }
 

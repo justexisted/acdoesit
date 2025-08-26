@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Referrals</title>
+  <link rel="stylesheet" href="../styles.css">
+  <script src="../auth.js" defer></script>
+  <script src="./referrals.js" defer></script>
+  <style>
+    .ref-card { border:1px solid #e5e7eb; border-radius:12px; padding:14px; margin:10px 0; background:#fff; }
+    .ref-actions { display:flex; gap:8px; }
+    .muted { color:#555; }
+    .copy-btn { font-weight:700; border-radius:8px; padding:8px 10px; border:1px solid #d1d5db; cursor:pointer; }
+    .create-box { border:1px dashed #d1d5db; border-radius:12px; padding:16px; margin:16px 0; background:#fafafa; }
+  </style>
+  <script>
+    document.addEventListener('userSignedIn', () => {
+      try { window.loadReferrals && window.loadReferrals(); } catch(e) {}
+    });
+  </script>
+  <link rel="icon" href="../favicon.ico">
+  <link rel="icon" href="../assets/favicon-16.png" type="image/png" sizes="16x16">
+</head>
+<body>
+  <div class="container">
+    <h1 class="headline">Referrals</h1>
+    <p class="subhead">Create and share referral links with custom rewards.</p>
+
+    <div class="create-box">
+      <label for="refReward" class="muted">What reward will your friend receive?</label>
+      <input id="refReward" placeholder="e.g. 15% off their subscription" style="width:100%; margin:8px 0;" />
+      <button id="createReferralBtn" class="btn btn-accent">Create New Referral Link</button>
+      <div id="createReferralMsg" class="muted" style="margin-top:8px;"></div>
+    </div>
+
+    <h3>Your Links</h3>
+    <div id="referralsList"></div>
+  </div>
+</body>
+</html>
+
+
