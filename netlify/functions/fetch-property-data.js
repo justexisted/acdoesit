@@ -34,13 +34,25 @@ async function handler(event) {
     // 2) Try to discover a Redfin URL for this address (best-effort)
     let redfin_url = '';
     try {
-      const rfQuery = encodeURIComponent(`${houseNumber} ${road}, ${cityish} ${postcode}`.trim());
-      const rfSearch = `https://www.redfin.com/stingray/do/location-autocomplete?location=${rfQuery}&v=2&market=socal&al=1&iss=false`; // public endpoint used by their UI
+      const rfQuery = encodeURIComponent([houseNumber, road, cityish, postcode].filter(Boolean).join(' '));
+      const rfSearch = `https://www.redfin.com/stingray/do/location-autocomplete?location=${rfQuery}&v=2&market=socal&al=1&iss=false`;
       const rfResp = await fetch(rfSearch, { headers: { 'User-Agent': userAgent, 'Accept': 'application/json' } });
       if (rfResp.ok) {
         const rj = await rfResp.json();
-        const best = (rj.autocomplete_sections || []).flatMap(s => s.rows || []).find(r => (r.url || '').includes('/CA/'));
-        if (best && best.url) redfin_url = `https://www.redfin.com${best.url}`;
+        const collectRows = (obj) => {
+          let rows = [];
+          if (!obj || typeof obj !== 'object') return rows;
+          if (Array.isArray(obj)) return obj.flatMap(collectRows);
+          if (obj.rows && Array.isArray(obj.rows)) rows = rows.concat(obj.rows);
+          if (obj.sections && Array.isArray(obj.sections)) rows = rows.concat(obj.sections.flatMap(collectRows));
+          if (obj.autocomplete_sections && Array.isArray(obj.autocomplete_sections)) rows = rows.concat(obj.autocomplete_sections.flatMap(collectRows));
+          if (obj.payload) rows = rows.concat(collectRows(obj.payload));
+          return rows;
+        };
+        const rows = collectRows(rj);
+        const candidates = rows.filter(r => r && r.url).map(r => String(r.url));
+        const pick = candidates.find(u => /\/home\//.test(u)) || candidates.find(u => /\/CA\//.test(u)) || candidates[0];
+        if (pick) redfin_url = pick.startsWith('http') ? pick : `https://www.redfin.com${pick}`;
       }
     } catch { /* ignore */ }
 
