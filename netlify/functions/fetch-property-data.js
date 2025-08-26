@@ -31,7 +31,20 @@ async function handler(event) {
     ].filter(Boolean).join(', ') || g.display_name || address;
     const postcode = addr.postcode || '';
 
-    // 2) Nearby amenities via Overpass API (free) - small radius and limited results
+    // 2) Try to discover a Redfin URL for this address (best-effort)
+    let redfin_url = '';
+    try {
+      const rfQuery = encodeURIComponent(`${houseNumber} ${road}, ${cityish} ${postcode}`.trim());
+      const rfSearch = `https://www.redfin.com/stingray/do/location-autocomplete?location=${rfQuery}&v=2&market=socal&al=1&iss=false`; // public endpoint used by their UI
+      const rfResp = await fetch(rfSearch, { headers: { 'User-Agent': userAgent, 'Accept': 'application/json' } });
+      if (rfResp.ok) {
+        const rj = await rfResp.json();
+        const best = (rj.autocomplete_sections || []).flatMap(s => s.rows || []).find(r => (r.url || '').includes('/CA/'));
+        if (best && best.url) redfin_url = `https://www.redfin.com${best.url}`;
+      }
+    } catch { /* ignore */ }
+
+    // 3) Nearby amenities via Overpass API (free) - small radius and limited results
     let amenities = [];
     try {
       const radius = 2000; // meters
@@ -92,12 +105,13 @@ async function handler(event) {
     if (nearBeach) features.push('Near the beach');
     if (nearBalboa) features.push('Near Balboa Park');
 
-    // 3) Return data (no paid providers: beds/baths/sqft/property_type may be blank)
+    // 4) Return data (no paid providers: beds/baths/sqft/property_type may be blank)
     return respond(200, {
       formatted_address,
       neighborhood,
       lat, lon,
       postcode,
+      redfin_url,
       beds: null,
       baths: null,
       square_feet: null,

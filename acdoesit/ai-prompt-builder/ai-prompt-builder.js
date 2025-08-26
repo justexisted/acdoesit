@@ -936,6 +936,18 @@ document.addEventListener("DOMContentLoaded", () => {
       const data = await resp.json();
       populateFieldsFromIntel(address, data);
       showMessage('Property details loaded', 'success');
+      // If a Redfin URL is available, auto-fill the listing URL and trigger parse
+      if (data && data.redfin_url) {
+        const urlInput = document.getElementById('listing-url-input');
+        if (urlInput) {
+          urlInput.value = data.redfin_url;
+          // Small delay to ensure UI is ready
+          setTimeout(() => {
+            const parseBtn = document.getElementById('listing-url-parse');
+            if (parseBtn) parseBtn.click();
+          }, 300);
+        }
+      }
     } catch (err) {
       showMessage(err.message || 'Failed to fetch details', 'error');
     } finally {
