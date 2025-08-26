@@ -1004,14 +1004,26 @@ document.addEventListener("DOMContentLoaded", () => {
       });
       if (!resp.ok) { const t = await resp.text(); throw new Error(t || 'Failed to parse listing'); }
       const data = await resp.json();
+      console.log('parse-listing response:', data);
       if (data) {
         const setIf = (k, v) => { if (v !== undefined && v !== null && v !== '') { formData[`listing_${k}`] = String(v); if (activeModule === 'listing') { const el = document.getElementById(`f_${k}`); if (el) el.value = String(v); } } };
         setIf('Beds', data.beds);
         setIf('Baths', data.baths);
         setIf('Square_Footage', data.square_feet);
-        if (data.property_type) setIf('Property_Type', data.property_type);
+        // Map property type from common schema types to our select options
+        if (data.property_type) {
+          const pt = String(data.property_type).toLowerCase();
+          let mapped = '';
+          if (pt.includes('condo')) mapped = 'Condo';
+          else if (pt.includes('single') || pt.includes('detached') || pt.includes('house')) mapped = 'Single-Family Home';
+          else if (pt.includes('town')) mapped = 'Townhouse';
+          else if (pt.includes('multi') || pt.includes('apartment') || pt.includes('duplex') || pt.includes('triplex') || pt.includes('quad')) mapped = 'Multi-Unit';
+          if (mapped) setIf('Property_Type', mapped); else setIf('Property_Type', data.property_type);
+        }
+        const hasAny = !!(data.beds || data.baths || data.square_feet || data.property_type);
         renderForm();
-        showMessage('Listing details parsed', 'success');
+        if (hasAny) showMessage('Listing details parsed', 'success');
+        else showMessage('Could not extract details from this URL', 'info');
       }
     } catch (err) {
       showMessage(err.message || 'Failed to parse listing', 'error');
