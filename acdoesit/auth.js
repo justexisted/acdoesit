@@ -151,6 +151,10 @@ class AuthSystem {
       await this.signIn(user);
       
       this.showMessage('Account created successfully!', 'success');
+      const rc = this.getReferralCode();
+      if (rc) {
+        this.showMessage('Referral applied to your account.', 'success');
+      }
       this.closeAllModals();
       
     } catch (error) {
@@ -632,7 +636,7 @@ class AuthSystem {
       const response = await fetch('/.netlify/functions/save-user', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userData: user })
+        body: JSON.stringify({ userData: user, referralCode: this.getReferralCode() })
       });
 
       if (!response.ok) {

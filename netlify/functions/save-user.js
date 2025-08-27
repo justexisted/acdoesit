@@ -59,6 +59,81 @@ export async function handler(event, context) {
         }
 
         console.log('User updated successfully');
+        // Ensure we have user id populated for referral handling
+        try {
+          dbUserData.id = dbUserData.id || (existingUsers[0] && existingUsers[0].id) || dbUserData.email;
+        } catch {}
+
+        // Handle referral if provided for existing users as well
+        if (referralCode) {
+          try {
+            const code = String(referralCode).trim();
+            if (code) {
+              const findRef = await fetch(`${url}/rest/v1/referrals?referral_code=eq.${encodeURIComponent(code)}&select=*`, { headers: supabaseHeaders(serviceRoleKey) });
+              if (findRef.ok) {
+                const rows = await findRef.json();
+                if (Array.isArray(rows) && rows.length > 0) {
+                  const referral = rows[0];
+                  if (referral.status === 'pending' && !referral.referee_user_id) {
+                    const completeResp = await fetch(`${url}/rest/v1/referrals?id=eq.${encodeURIComponent(referral.id)}`, {
+                      method: 'PATCH',
+                      headers: { ...supabaseHeaders(serviceRoleKey), 'Content-Type': 'application/json', 'Prefer': 'return=representation' },
+                      body: JSON.stringify({ referee_user_id: dbUserData.id, status: 'completed', completed_at: new Date().toISOString() })
+                    });
+                    if (completeResp.ok) {
+                      const [completed] = await completeResp.json();
+                      const REWARD = parseInt(process.env.REFERRER_REWARD || '10', 10);
+                      try {
+                        const refUserResp = await fetch(`${url}/rest/v1/users?id=eq.${encodeURIComponent(completed.referrer_user_id)}&select=id,email,first_name,last_name,credits`, { headers: supabaseHeaders(serviceRoleKey) });
+                        if (refUserResp.ok) {
+                          const list = await refUserResp.json();
+                          const refUser = Array.isArray(list) && list.length > 0 ? list[0] : null;
+                          if (refUser) {
+                            const newCredits = (refUser.credits || 0) + REWARD;
+                            await fetch(`${url}/rest/v1/users?id=eq.${encodeURIComponent(refUser.id)}`, {
+                              method: 'PATCH',
+                              headers: { ...supabaseHeaders(serviceRoleKey), 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+                              body: JSON.stringify({ credits: newCredits, updated_at: new Date().toISOString() })
+                            });
+                            // Emails
+                            const referrerName = [refUser.first_name || '', refUser.last_name || ''].filter(Boolean).join(' ') || null;
+                            const refereeName = [dbUserData.first_name || '', dbUserData.last_name || ''].filter(Boolean).join(' ') || null;
+                            await sendEmailOrQueue({
+                              to: refUser.email,
+                              name: referrerName,
+                              subject: 'Success! Someone new has joined with your link',
+                              body: `Great news! A new user (${dbUserData.email}) has signed up using your referral link for "${completed.referee_reward_description}". You'll receive your reward as soon as they claim theirs.`,
+                              meta: { type: 'referral_referrer_signup', referral_id: completed.id }
+                            });
+                            await sendEmailOrQueue({
+                              to: dbUserData.email,
+                              name: refereeName,
+                              subject: 'Welcome! Your reward is ready',
+                              body: `Welcome aboard! As promised, your reward for signing up (${completed.referee_reward_description}) has been applied to your account.`,
+                              meta: { type: 'referral_referee_welcome', referral_id: completed.id }
+                            });
+                            await sendEmailOrQueue({
+                              to: refUser.email,
+                              name: referrerName,
+                              subject: "You've earned a referral reward!",
+                              body: `Thank you for spreading the word! Because ${dbUserData.email} joined and claimed their reward, we've added ${REWARD} account credits to your account.`,
+                              meta: { type: 'referral_referrer_reward', referral_id: completed.id, reward: REWARD }
+                            });
+                          }
+                        }
+                      } catch (e) {
+                        console.log('Referral reward/email error (existing user):', e.message);
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          } catch (e) {
+            console.log('Referral handling error (existing user):', e.message);
+          }
+        }
+
         return { statusCode: 200, body: JSON.stringify({ success: true, action: 'updated' }) };
       }
     }
